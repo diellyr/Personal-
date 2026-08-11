@@ -18,11 +18,16 @@ export function barChart(data, { width = 480, height = 220, color = '#2952e3', v
   const chartH = height - padB - padT;
   const barW = chartW / data.length - 10;
   data.forEach((d, i) => {
-    const barH = (d.value / max) * chartH;
+    const barH = (Math.abs(d.value) / max) * chartH;
     const x = padL + i * (chartW / data.length) + 5;
     const y = padT + (chartH - barH);
-    svg.appendChild(svgEl('rect', { x, y, width: Math.max(barW, 4), height: Math.max(barH, 0), fill: d.color || color, rx: 3 }));
-    svg.appendChild(svgEl('text', { x: x + barW / 2, y: height - padB + 14, 'text-anchor': 'middle' })).textContent = d.label;
+    const rect = svgEl('rect', { x, y, width: Math.max(barW, 4), height: Math.max(barH, 0), fill: d.color || color, rx: 3 });
+    if (d.onClick) { rect.style.cursor = 'pointer'; rect.addEventListener('click', d.onClick); }
+    svg.appendChild(rect);
+    const labelEl = svgEl('text', { x: x + barW / 2, y: height - padB + 14, 'text-anchor': 'middle' });
+    labelEl.textContent = d.label;
+    if (d.onClick) { labelEl.style.cursor = 'pointer'; labelEl.addEventListener('click', d.onClick); }
+    svg.appendChild(labelEl);
     const t = svgEl('text', { x: x + barW / 2, y: y - 4, 'text-anchor': 'middle' });
     t.textContent = valueFmt(d.value);
     svg.appendChild(t);

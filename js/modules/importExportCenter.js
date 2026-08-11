@@ -11,6 +11,20 @@ import { jobSourceConnector } from '../core/connectors/jobSourceConnector.js';
 
 const CONNECTORS = [acompanhaPlusConnector, expansionConnector, plumaConnector, jobSourceConnector];
 
+// Progress callbacks fire once per record, which for a few thousand records
+// is far more often than the DOM needs to repaint — throttle to keep large
+// imports from also becoming slow because of layout thrashing.
+function throttleProgress(fn, everyMs = 150) {
+  let last = 0;
+  return (done, total) => {
+    const now = Date.now();
+    if (done === total || now - last >= everyMs) {
+      last = now;
+      fn(done, total);
+    }
+  };
+}
+
 export async function render(container, ctx) {
   const { subview } = ctx;
   clear(container);
@@ -36,20 +50,37 @@ function renderImport(c) {
       h('div', { class: 'form-field' }, [h('label', {}, 'Tipo de entidade'), entitySelect]),
       h('div', { class: 'form-field' }, [h('label', {}, 'Arquivo (.json ou .csv)'), fileInput]),
     ]),
-    h('button', { class: 'btn', onClick: async () => {
+    h('button', { class: 'btn', onClick: async (e) => {
       const file = fileInput.files[0];
       if (!file) return reportError(new Error('Selecione um arquivo.'));
+      const previewBtn = e.currentTarget;
+      previewBtn.disabled = true;
+      const previewLabel = previewBtn.textContent;
+      previewBtn.textContent = 'Lendo arquivo…';
       try {
         const text = await readFileAsText(file);
         const rows = detectFormatAndParse(file.name, text);
         clear(previewHost);
         previewHost.appendChild(h('p', {}, `${rows.length} registro(s) detectado(s) no arquivo.`));
-        previewHost.appendChild(h('button', { class: 'btn btn-primary', onClick: async () => {
-          const n = await importIntoEntityType(entitySelect.value, rows);
-          reportSuccess(`${n} registro(s) importado(s) em ${entitySelect.value}.`);
+        previewHost.appendChild(h('button', { class: 'btn btn-primary', onClick: async (e2) => {
+          const confirmBtn = e2.currentTarget;
+          confirmBtn.disabled = true;
+          confirmBtn.textContent = `Importando 0/${rows.length}…`;
+          try {
+            const n = await importIntoEntityType(entitySelect.value, rows, {
+              onProgress: throttleProgress((done, total) => { confirmBtn.textContent = `Importando ${done}/${total}…`; }),
+            });
+            reportSuccess(`${n} registro(s) importado(s) em ${entitySelect.value}.`);
+          } finally {
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = 'Confirmar importação';
+          }
         } }, 'Confirmar importação'));
       } catch (err) {
         reportError(err, 'import');
+      } finally {
+        previewBtn.disabled = false;
+        previewBtn.textContent = previewLabel;
       }
     } }, 'Pré-visualizar'),
     previewHost,
@@ -86,9 +117,12 @@ function connectorCard(conn) {
     ]);
   }
 
-  async function onPreview() {
+  async function onPreview(e) {
     const file = fileInput.files[0];
     if (!file) return reportError(new Error('Escolha um arquivo .json ou .csv.'));
+    const previewBtn = e.currentTarget;
+    previewBtn.disabled = true;
+    previewBtn.textContent = 'Analisando arquivo…';
     try {
       const text = await readFileAsText(file);
       const rows = detectFormatAndParse(file.name, text);
@@ -98,18 +132,33 @@ function connectorCard(conn) {
       previewHost.appendChild(h('p', { class: 'muted' }, `${previewed.length} registro(s) no arquivo · ${newCount} novo(s) · ${previewed.length - newCount} duplicado(s).`));
       previewHost.appendChild(h('div', {}, previewed.slice(0, 10).map(previewRow)));
       if (previewed.length > 10) previewHost.appendChild(h('div', { class: 'muted', style: 'padding-top:6px' }, `+ ${previewed.length - 10} outro(s)…`));
-      previewHost.appendChild(h('button', {
+      const confirmBtn = h('button', {
         class: 'btn btn-primary btn-sm', style: 'margin-top:10px',
-        onClick: async () => {
-          const result = await conn.import(rows);
-          reportSuccess(`${conn.label}: ${result.imported} importado(s), ${result.skipped} ignorado(s) (duplicado/erro).`);
-          fileInput.value = '';
-          clear(previewHost);
-          paint();
+        onClick: async (e2) => {
+          const btn = e2.currentTarget;
+          btn.disabled = true;
+          btn.textContent = `Importando 0/${rows.length}…`;
+          try {
+            const result = await conn.import(rows, {
+              onProgress: throttleProgress((done, total) => { btn.textContent = `Importando ${done}/${total}…`; }),
+            });
+            reportSuccess(`${conn.label}: ${result.imported} importado(s), ${result.skipped} ignorado(s) (duplicado/erro).`);
+            fileInput.value = '';
+            clear(previewHost);
+            paint();
+          } catch (err) {
+            reportError(err, conn.id);
+            btn.disabled = false;
+            btn.textContent = 'Confirmar importação';
+          }
         },
-      }, 'Confirmar importação'));
+      }, 'Confirmar importação');
+      previewHost.appendChild(confirmBtn);
     } catch (err) {
       reportError(err, conn.id);
+    } finally {
+      previewBtn.disabled = false;
+      previewBtn.textContent = 'Pré-visualizar';
     }
   }
 

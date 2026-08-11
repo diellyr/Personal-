@@ -1,7 +1,7 @@
 import { h, clear, fmtMoney } from '../ui/dom.js';
 import { sectionTitle, statTile, emptyState, badge } from '../ui/components/misc.js';
 import { barChart, lineChart, radarChart } from '../ui/components/chart.js';
-import { computeSpendingIntelligence, computeForecast } from '../core/financeIntelligence.js';
+import { computeSpendingIntelligence, computeForecast, computeMonthlyBreakdown } from '../core/financeIntelligence.js';
 import { computeTimesheet } from '../core/workIntelligence.js';
 import { computeCareerEvidenceScores } from '../core/careerIntelligence.js';
 import { computeEnglishDashboard } from '../core/englishIntelligence.js';
@@ -59,25 +59,33 @@ export async function render(container, ctx) {
   container.appendChild(grid);
 }
 
-function cardShell(title, route, bodyNode) {
-  return h('div', { class: 'card' }, [
+function cardShell(title, route, bodyNode, { clickable = false } = {}) {
+  const card = h('div', { class: 'card', style: clickable ? 'cursor:pointer' : '' }, [
     h('div', { class: 'flex-between', style: 'margin-bottom:10px' }, [
       h('h3', { style: 'margin:0' }, title),
-      h('button', { class: 'btn btn-sm', onClick: () => navigate(`/${route}`) }, 'Abrir módulo →'),
+      h('button', { class: 'btn btn-sm', onClick: (e) => { e.stopPropagation(); navigate(`/${route}`); } }, 'Abrir módulo →'),
     ]),
     bodyNode,
   ]);
+  if (clickable) card.addEventListener('click', () => navigate(`/${route}`));
+  return card;
 }
 
 async function financeCard() {
-  const [spending, forecast] = await Promise.all([computeSpendingIntelligence(), computeForecast()]);
+  const [spending, forecast, breakdown] = await Promise.all([computeSpendingIntelligence(), computeForecast(), computeMonthlyBreakdown()]);
+  const currentMonth = breakdown.months[new Date().getMonth()];
   const body = h('div', {}, [
+    h('div', { class: 'grid grid-3', style: 'margin-bottom:10px' }, [
+      statTile('Receitas (mês)', fmtMoney(currentMonth.income)),
+      statTile('Despesas (mês)', fmtMoney(currentMonth.expense)),
+      statTile('Saldo (mês)', fmtMoney(currentMonth.net)),
+    ]),
     spending.categories.length
-      ? barChart(spending.categories.slice(0, 6), { height: 160, valueFmt: (v) => fmtMoney(v) })
+      ? barChart(spending.categories.slice(0, 6), { height: 140, valueFmt: (v) => fmtMoney(v) })
       : emptyState({ icon: '💰', title: 'Sem despesas registradas' }),
     h('div', { class: 'muted', style: 'margin-top:6px' }, `Projeção 12 meses: ${fmtMoney(forecast.projection12)}`),
   ]);
-  return cardShell('💰 Financeiro — despesas por categoria', 'finance', body);
+  return cardShell(`💰 Financeiro — ${currentMonth.label}/${breakdown.year}`, 'finance', body, { clickable: true });
 }
 
 async function workCard() {

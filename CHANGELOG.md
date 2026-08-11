@@ -8,6 +8,40 @@ All notable changes to this project are documented in this file. Format based on
 
 Nothing yet.
 
+## [1.7.0] — 2026-08-11
+
+### Added
+
+- **Finance: full-year monthly income/expense view.** The Finance dashboard
+  tab now shows two 12-bar charts (Jan–Dez) — receitas and despesas per month
+  for the current year — built from a new `computeMonthlyBreakdown()`
+  (`js/core/financeIntelligence.js`). Clicking any bar (or its month label)
+  shows that month's income/expense/balance totals plus the full list of
+  transactions for the month, defaulting to the current month (or the most
+  recent month with data) on load.
+- **Dashboards: Finance card now shows the current month.** The central
+  Dashboards module's Finance card (`js/modules/dashboardsModule.js`) shows
+  current-month receitas/despesas/saldo stat tiles above the existing
+  spending-by-category chart, and the whole card is now clickable (not just
+  the "Abrir módulo" button) to jump straight into the Finance module.
+- **Import Center: live progress on preview/confirm.** The "Pré-visualizar"
+  and "Confirmar importação" buttons (both the generic importer and every
+  per-connector card) now disable themselves and show a live counter
+  (`Importando 1234/3266…`) while the import runs, instead of giving zero
+  feedback. `BaseConnector.import()` and `importIntoEntityType()` accept an
+  optional `onProgress(done, total)` callback, throttled in the UI layer to
+  avoid repainting on every single record. Root cause: a multi-second import
+  of thousands of records previously looked identical to a frozen page,
+  which risked someone navigating away mid-import and ending up with a
+  partial result.
+
+### Changed
+
+- `js/ui/components/chart.js`'s `barChart()` now accepts an optional
+  `onClick` per data point (used by the new monthly finance view) and clamps
+  bar height to `Math.abs(value)` so negative values don't produce a
+  negative-height SVG rect.
+
 ## [1.6.1] — 2026-08-11
 
 ### Fixed

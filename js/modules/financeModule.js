@@ -4,7 +4,7 @@ import { renderEntityCrud } from '../core/entityModuleEngine.js';
 import { registerSeeder } from '../core/seed/seedData.js';
 import { badge, statTile, sectionTitle, progressBar, emptyState } from '../ui/components/misc.js';
 import { barChart, lineChart } from '../ui/components/chart.js';
-import { computeFinanceDashboard, computeSpendingIntelligence, computeForecast, evaluateFinancialDecision } from '../core/financeIntelligence.js';
+import { computeFinanceDashboard, computeSpendingIntelligence, computeForecast, evaluateFinancialDecision, computeMonthlyBreakdown } from '../core/financeIntelligence.js';
 import { connectorMetaRepository } from '../core/entities/connectorMetaRepository.js';
 import { navigate } from '../core/router.js';
 
@@ -43,6 +43,48 @@ export async function render(container, ctx) {
         progressBar(pct),
       ]);
     })) : emptyState({ icon: '🎯', title: 'Nenhuma meta cadastrada', actionLabel: 'Ir para Goal Manager', onAction: () => document.querySelector('.tab:nth-child(4)')?.click() }));
+
+    c.appendChild(sectionTitle(`📅 Acompanhamento mensal — ${new Date().getFullYear()}`));
+    const breakdown = await computeMonthlyBreakdown();
+    const monthDetailHost = h('div', { style: 'margin-top:14px' });
+
+    function renderMonthDetail(m) {
+      clear(monthDetailHost);
+      if (!m) return;
+      const sorted = [...m.transactions].sort((a, b) => (b.data.date || '').localeCompare(a.data.date || ''));
+      monthDetailHost.appendChild(h('div', { class: 'card' }, [
+        h('div', { class: 'flex-between' }, [h('strong', {}, `${m.label} de ${breakdown.year}`), badge(`${m.transactions.length} transação(ões)`, 'neutral')]),
+        h('div', { class: 'grid grid-3', style: 'margin-top:10px' }, [
+          statTile('Receitas', fmtMoney(m.income)),
+          statTile('Despesas', fmtMoney(m.expense)),
+          statTile('Saldo', fmtMoney(m.net)),
+        ]),
+        sorted.length
+          ? h('div', { class: 'table-wrap', style: 'margin-top:10px' }, h('table', { class: 'data-table' }, [
+            h('thead', {}, h('tr', {}, [h('th', {}, 'Descrição'), h('th', {}, 'Categoria'), h('th', {}, 'Tipo'), h('th', {}, 'Valor'), h('th', {}, 'Data')])),
+            h('tbody', {}, sorted.map((t) => h('tr', {}, [
+              h('td', {}, t.data.description), h('td', {}, t.data.category),
+              h('td', {}, badge(t.data.type === 'INCOME' ? 'Receita' : 'Despesa', t.data.type === 'INCOME' ? 'success' : 'critical')),
+              h('td', {}, fmtMoney(t.data.amount)), h('td', {}, fmtDate(t.data.date)),
+            ]))),
+          ]))
+          : emptyState({ icon: '📅', title: 'Nenhuma transação neste mês' }),
+      ]));
+    }
+
+    const fmtCompact = (v) => (v >= 1000 || v <= -1000) ? `${(v / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}k` : fmtMoney(v);
+    c.appendChild(h('div', { class: 'card' }, [
+      h('p', { class: 'muted' }, 'Clique em um mês (na barra ou no rótulo) para ver o detalhe de receitas e despesas.'),
+      h('div', { class: 'muted', style: 'font-size:12.5px;margin-top:8px' }, 'Receitas'),
+      barChart(breakdown.months.map((m) => ({ label: m.label, value: m.income, color: '#1a8a4a', onClick: () => renderMonthDetail(m) })), { height: 150, valueFmt: fmtCompact }),
+      h('div', { class: 'muted', style: 'font-size:12.5px;margin-top:10px' }, 'Despesas'),
+      barChart(breakdown.months.map((m) => ({ label: m.label, value: m.expense, color: '#c2273d', onClick: () => renderMonthDetail(m) })), { height: 150, valueFmt: fmtCompact }),
+    ]));
+    c.appendChild(monthDetailHost);
+
+    const currentMonth = breakdown.months[new Date().getMonth()];
+    const monthsWithData = breakdown.months.filter((m) => m.transactions.length > 0);
+    renderMonthDetail(currentMonth.transactions.length ? currentMonth : monthsWithData[monthsWithData.length - 1] || currentMonth);
   }
 
   async function renderSpending(c) {

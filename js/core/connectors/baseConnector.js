@@ -54,12 +54,17 @@ export class BaseConnector extends Connector {
     });
   }
 
-  async import(rawRecords) {
+  async import(rawRecords, { onProgress } = {}) {
     const previewed = await this.preview(rawRecords);
     let imported = 0;
     const errors = [];
+    let processed = 0;
     for (const item of previewed) {
-      if (item.isDuplicate) continue;
+      processed++;
+      if (item.isDuplicate) {
+        if (onProgress) onProgress(processed, previewed.length);
+        continue;
+      }
       try {
         const { externalId, ...data } = item.mapped;
         await this.repo.create(data, { source: this.id.toUpperCase(), external_id: String(item.externalId), sync_status: 'SYNCED' });
@@ -67,6 +72,7 @@ export class BaseConnector extends Connector {
       } catch (err) {
         errors.push(err.message);
       }
+      if (onProgress) onProgress(processed, previewed.length);
     }
     await connectorMetaRepository.recordImport(this.id, { recordsImported: imported, errors });
     await logAudit('INTEGRATION', this.entityType, `${this.label}: imported ${imported} record(s), ${previewed.length - imported} duplicate/skip`);

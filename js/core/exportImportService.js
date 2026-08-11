@@ -72,13 +72,14 @@ export async function exportAllModules(format = 'json') {
   return total;
 }
 
-export async function importIntoEntityType(entityType, rows) {
+export async function importIntoEntityType(entityType, rows, { onProgress } = {}) {
   const repo = new EntityRepository(entityType);
   let imported = 0;
   for (const row of rows) {
     const { id, visibility, owner_id, created_at, updated_at, deleted_at, ...data } = row;
     await repo.create(data, { visibility: visibility || 'PRIVATE' });
     imported++;
+    if (onProgress) onProgress(imported, rows.length);
   }
   await logAudit('IMPORT', entityType, `Imported ${imported} record(s)`);
   return imported;
