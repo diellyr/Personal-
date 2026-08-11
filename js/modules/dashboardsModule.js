@@ -41,7 +41,6 @@ export async function render(container, ctx) {
   const cardBuilders = [
     canFinance && financeCard,
     canFamily && acompanhaCard,
-    canFamily && schoolGradesCard,
     canWork && workCard,
     canCareer && careerCard,
     canEnglish && englishCard,
@@ -92,21 +91,6 @@ async function financeCard() {
   return cardShell(`💰 Financeiro — ${currentMonth.label}/${breakdown.year}`, 'finance', body, { clickable: true });
 }
 
-async function acompanhaCard(user) {
-  const all = (await new EntityRepository('family.acompanhaEvent').findAll()).filter((r) => canViewResource(user, r) && r.data.childName);
-  const byChild = {};
-  all.forEach((r) => { const c = r.data.childName; byChild[c] = (byChild[c] || 0) + 1; });
-  const data = Object.entries(byChild).map(([label, value]) => ({ label, value }));
-  const alerts = all.filter((r) => r.data.alert).length;
-  const body = h('div', {}, [
-    data.length
-      ? barChart(data, { height: 140, color: '#f59e0b' })
-      : emptyState({ icon: '🎓', title: 'Sem dados do Acompanha+ ainda' }),
-    h('div', { class: 'muted', style: 'margin-top:6px' }, alerts ? `⚠️ ${alerts} alerta(s) ativo(s) entre os filhos acompanhados.` : '✅ Nenhum alerta ativo.'),
-  ]);
-  return cardShell('🎓 Acompanha+ School — registros por filho(a)', 'acompanha-plus', body, { clickable: true });
-}
-
 function deltaBadge(current, previous) {
   if (current === null || current === undefined || previous === null || previous === undefined) return badge('—', 'neutral');
   const diff = current - previous;
@@ -114,29 +98,38 @@ function deltaBadge(current, previous) {
   return badge(`${diff >= 0 ? '▲' : '▼'} ${Math.abs(diff).toFixed(1)}`, diff >= 0 ? 'success' : 'critical');
 }
 
-async function schoolGradesCard(user) {
-  const children = await listSchoolChildren(user);
-  let body;
-  if (!children.length) {
-    body = emptyState({ icon: '📈', title: 'Sem notas importadas ainda' });
-  } else {
-    const rows = await Promise.all(children.map(async (child) => {
-      const ev = await computeSchoolEvolution(user, child);
-      return { child, bimester: summarizeComparison(ev.bimesterComparison), semester: summarizeComparison(ev.semesterComparison) };
-    }));
-    body = h('div', {}, rows.map((r) => h('div', { style: 'padding:8px 0;border-bottom:1px solid var(--border)' }, [
-      h('strong', {}, r.child),
-      h('div', { class: 'flex-between', style: 'font-size:12.5px;margin-top:4px' }, [
-        h('span', {}, `Bimestre (${r.bimester.label || '—'}): ${r.bimester.currentAvg != null ? r.bimester.currentAvg.toFixed(1) : '—'}${r.bimester.previousAvg != null ? ` · anterior: ${r.bimester.previousAvg.toFixed(1)}` : ''}`),
-        deltaBadge(r.bimester.currentAvg, r.bimester.previousAvg),
-      ]),
-      h('div', { class: 'flex-between', style: 'font-size:12.5px;margin-top:2px' }, [
-        h('span', {}, `Semestre (${r.semester.label || '—'}): ${r.semester.currentAvg != null ? r.semester.currentAvg.toFixed(1) : '—'}${r.semester.previousAvg != null ? ` · anterior: ${r.semester.previousAvg.toFixed(1)}` : ''}`),
-        deltaBadge(r.semester.currentAvg, r.semester.previousAvg),
-      ]),
-    ])));
+// One card for all Acompanha+ School data — event log (acompanhaEvent) and
+// grades (schoolGrade) are separate entity types with separate children
+// sets (e.g. a child with only imported grades and no logged events), so a
+// child could be entirely invisible if these were two separate cards.
+async function acompanhaCard(user) {
+  const events = (await new EntityRepository('family.acompanhaEvent').findAll()).filter((r) => canViewResource(user, r) && r.data.childName);
+  const byChild = {};
+  events.forEach((r) => { const c = r.data.childName; byChild[c] = (byChild[c] || 0) + 1; });
+  const eventData = Object.entries(byChild).map(([label, value]) => ({ label, value }));
+  const alerts = events.filter((r) => r.data.alert).length;
+
+  const gradeChildren = await listSchoolChildren(user);
+  const gradeRows = await Promise.all(gradeChildren.map(async (child) => {
+    const ev = await computeSchoolEvolution(user, child);
+    return { child, bimester: summarizeComparison(ev.bimesterComparison) };
+  }));
+
+  const parts = [];
+  if (eventData.length) {
+    parts.push(barChart(eventData, { height: 120, color: '#f59e0b' }));
+    parts.push(h('div', { class: 'muted', style: 'margin:6px 0 12px' }, alerts ? `⚠️ ${alerts} alerta(s) ativo(s) entre os filhos acompanhados.` : '✅ Nenhum alerta ativo.'));
   }
-  return cardShell('📈 Notas — bimestre e semestre atual vs. anterior', 'acompanha-plus', body, { clickable: true });
+  if (gradeRows.length) {
+    parts.push(h('div', { class: 'muted', style: 'font-size:12px;margin-bottom:4px' }, 'Notas — bimestre atual vs. anterior'));
+    parts.push(h('div', {}, gradeRows.map((r) => h('div', { class: 'flex-between', style: 'padding:6px 0;border-bottom:1px solid var(--border);font-size:12.5px' }, [
+      h('span', {}, `${r.child}: ${r.bimester.currentAvg != null ? r.bimester.currentAvg.toFixed(1) : '—'}${r.bimester.previousAvg != null ? ` · anterior: ${r.bimester.previousAvg.toFixed(1)}` : ''}`),
+      deltaBadge(r.bimester.currentAvg, r.bimester.previousAvg),
+    ]))));
+  }
+  if (!parts.length) parts.push(emptyState({ icon: '🎓', title: 'Sem dados do Acompanha+ ainda' }));
+
+  return cardShell('🎓 Acompanha+ School', 'acompanha-plus', h('div', {}, parts), { clickable: true });
 }
 
 async function workCard() {

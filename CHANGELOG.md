@@ -8,6 +8,27 @@ All notable changes to this project are documented in this file. Format based on
 
 Nothing yet.
 
+## [1.10.0] — 2026-08-11
+
+### Added
+
+- **Line-chart trend view** in Acompanha+ School's "Evolução escolar": two
+  line charts ("Por bimestre" / "Por semestre") plotting the overall average
+  score (every category + subject combined) across every period on record —
+  complements the existing current-vs-previous radar/bar comparisons with a
+  continuous trajectory view. Backed by new `overallByBimester` /
+  `overallBySemester` series in `computeSchoolEvolution()`.
+
+### Fixed
+
+- **Dashboards showed two separate, similarly-named Acompanha+ School
+  cards** — one listing children by logged event (`family.acompanhaEvent`),
+  one listing children by grade comparison (`family.schoolGrade`) — so a
+  child who only has imported grades (no manually logged Acompanha+ events)
+  was invisible in the card the events lived in, and easy to miss entirely
+  since the grades card looked unrelated. Merged into a single "🎓
+  Acompanha+ School" card that shows both when present.
+
 ## [1.9.1] — 2026-08-11
 
 ### Fixed

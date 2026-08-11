@@ -77,6 +77,19 @@ export async function computeSchoolEvolution(user, childName) {
     series: periods.map((p) => ({ period: p, value: scoreFor('SUBJECT', subj, p) })),
   }));
 
+  // Overall trend line: every category+subject averaged together per
+  // bimester / per semester, across every period on record — a single line
+  // showing the big-picture trajectory, distinct from the per-category
+  // breakdowns and the current-vs-previous comparisons above.
+  const overallByBimester = periods.map((p) => ({
+    label: p.label,
+    value: avg(withPeriod.filter((r) => r.year === p.year && Number(r.period.replace('B', '')) === p.bimester).map((r) => r.scoreValue)),
+  }));
+  const overallBySemester = semesters.map((s) => ({
+    label: s.label,
+    value: avg(withPeriod.filter((r) => r.year === s.year && r.semester === s.semester).map((r) => r.scoreValue)),
+  }));
+
   const bimesterComparison = currentPeriod ? {
     currentLabel: currentPeriod.label, previousLabel: previousPeriod ? previousPeriod.label : null,
     categories: categories.map((cat) => ({
@@ -117,6 +130,7 @@ export async function computeSchoolEvolution(user, childName) {
   return {
     childName, periods, currentPeriod, previousPeriod, semesters, currentSemester, previousSemester,
     categories, subjects, categoryByPeriod, subjectByPeriod, bimesterComparison, semesterComparison,
+    overallByBimester, overallBySemester,
     rboPercent, rboTotal, hasData: rows.length > 0,
   };
 }
