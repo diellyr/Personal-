@@ -11,8 +11,10 @@ Church + Job interviews + Travel, and a live preview of AI Chief of Staff insigh
 ## Dashboards (`#/dashboards`)
 Central chart aggregation across modules — Finance, Acompanha+ School (registros
 per child + a "Notas" card comparing each child's current bimester/semester
-average to the previous one), Work, Career, English, Life Balance, Jobs, Church —
-each card reusing that module's own Intelligence compute function and gated by
+average to the previous one), Work, Career, English, Life Balance, Jobs, Church,
+and Portal Expansão — Jovens (active count, leaders, water-baptism %, and
+upcoming birthdays) — each card reusing that module's own Intelligence compute
+function and gated by
 the same module permission its full screen uses. Links back to each module for
 the full drill-down. `js/modules/dashboardsModule.js`.
 
@@ -37,9 +39,14 @@ the full drill-down. `js/modules/dashboardsModule.js`.
   Bom/Ótimo percentage breakdown. `js/modules/acompanhaPlusModule.js`,
   `js/core/schoolIntelligence.js`, `js/core/connectors/schoolBackupConnector.js`.
 - **Church** (`#/church`) — Funções e Cargos, Pessoas, Agenda, Pregações e Estudos,
-  Projetos, Acompanhamento, and Church Intelligence (People Attention Radar,
-  Leadership Load, Ministry Health). `js/modules/churchModule.js`,
-  `js/core/churchIntelligence.js`.
+  Projetos, Acompanhamento, Church Intelligence (People Attention Radar,
+  Leadership Load, Ministry Health), and a "Jovens (Expansão)" tab: a single
+  smart-detecting import (Portal Expansão backup or a flat event export) and
+  a youth-ministry census dashboard — counts by city/congregação/função/estado
+  civil/pastor, water/Holy-Spirit baptism coverage (with a follow-up list of
+  youth not yet baptized in water), and upcoming birthdays (next 30 days).
+  `js/modules/churchModule.js`, `js/core/churchIntelligence.js`,
+  `js/core/expansionIntelligence.js`.
 - **Finance** (`#/finance`) — Dashboard, Transações, Spending Intelligence, Goal
   Manager, Forecast (3/6/12 month linear projection), Financial Decision Agent
   ("posso gastar X?"), Dívidas & Investimentos. `js/modules/financeModule.js`,

@@ -11,6 +11,7 @@ import { createRole, deleteRole, setRolePermission, listRoles } from '../core/ro
 import { parseJSON } from '../core/importUtils.js';
 import { extractSchoolBackupRows, schoolBackupConnector } from '../core/connectors/schoolBackupConnector.js';
 import { computeSchoolEvolution } from '../core/schoolIntelligence.js';
+import { extractExpansionYouthRows, expansionYouthConnector } from '../core/connectors/expansionYouthConnector.js';
 
 export async function render(container, ctx) {
   clear(container);
@@ -193,6 +194,26 @@ async function run(host) {
     } finally {
       await Promise.all(created.map((r) => repo.hardDelete(r.id)));
     }
+  });
+
+  await test('Expansion Youth: joins cities/congregations, skips isDemo, expand() recognizes wrapped backup', async () => {
+    const data = {
+      cities: [{ id: 'city-1', nome: 'CIDADE TESTE' }],
+      congregations: [{ id: 'cong-1', nome: 'CONGREGAÇÃO TESTE' }],
+      youth: [
+        { id: 'y-1', nome: 'Jovem Real', cidadeId: 'city-1', congregacaoId: 'cong-1', status: 'ativo', ativo: true, dataBatismoAguas: '2020-01-01', batizadoEspiritoSanto: true, liderExpansao: true, qualDepartamento: 'CONSELHEIRO (A)' },
+        { id: 'y-2', nome: 'Jovem Demo da Plataforma', isDemo: true, cidadeId: 'city-1', congregacaoId: 'cong-1' },
+      ],
+    };
+    const rows = extractExpansionYouthRows(data);
+    if (rows.length !== 1) throw new Error(`expected 1 row (isDemo youth skipped), got ${rows.length}`);
+    if (rows[0].city !== 'CIDADE TESTE' || rows[0].congregation !== 'CONGREGAÇÃO TESTE') throw new Error(`city/congregation join failed: ${JSON.stringify(rows[0])}`);
+
+    const mapped = expansionYouthConnector.mapRecord(rows[0]);
+    if (mapped.holySpiritBaptism !== true || !mapped.isLeader) throw new Error(`bad field mapping: ${JSON.stringify(mapped)}`);
+
+    const expanded = expansionYouthConnector.expand([{ data }]);
+    if (expanded.length !== 1) throw new Error('expand() did not recognize the wrapped Portal Expansão backup shape');
   });
 
   await test('Roles: built-in role cannot be deleted', async () => {

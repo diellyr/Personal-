@@ -11,6 +11,7 @@ import { EntityRepository } from '../core/entityRepository.js';
 import { canViewResource, can } from '../core/permissions.js';
 import { navigate } from '../core/router.js';
 import { listSchoolChildren, computeSchoolEvolution, summarizeComparison } from '../core/schoolIntelligence.js';
+import { computeExpansionIntelligence } from '../core/expansionIntelligence.js';
 
 /**
  * Central Dashboards: one screen that pulls the chart already built for
@@ -47,6 +48,7 @@ export async function render(container, ctx) {
     canIntelligence && lifeBalanceCard,
     canJobs && jobsCard,
     canChurch && churchCard,
+    canChurch && expansionYouthCard,
   ].filter(Boolean);
 
   const cards = await Promise.all(cardBuilders.map((fn) => fn(user)));
@@ -183,4 +185,25 @@ async function churchCard() {
       : h('div', { class: 'muted', style: 'margin-top:8px' }, '✅ Acompanhamento em dia.'),
   ]);
   return cardShell('⛪ Igreja — saúde do ministério', 'church', body);
+}
+
+async function expansionYouthCard(user) {
+  const intel = await computeExpansionIntelligence(user);
+  let body;
+  if (!intel.hasData) {
+    body = emptyState({ icon: '🌍', title: 'Sem dados do Portal Expansão ainda' });
+  } else {
+    body = h('div', {}, [
+      h('div', { class: 'grid grid-3', style: 'margin-bottom:10px' }, [
+        statTile('Jovens ativos', intel.total),
+        statTile('Líderes', intel.leaders),
+        statTile('Batizados em água', `${intel.waterBaptism.pct}%`, null, intel.waterBaptism.pct >= 70 ? 'success' : intel.waterBaptism.pct >= 40 ? 'info' : 'critical'),
+      ]),
+      intel.byCity.length ? barChart(intel.byCity.slice(0, 6), { height: 130 }) : null,
+      intel.upcomingBirthdays.length
+        ? h('div', { class: 'muted', style: 'margin-top:6px' }, `🎂 ${intel.upcomingBirthdays.length} aniversariante(s) nos próximos 30 dias.`)
+        : h('div', { class: 'muted', style: 'margin-top:6px' }, 'Nenhum aniversário nos próximos 30 dias.'),
+    ]);
+  }
+  return cardShell('🌍 Portal Expansão — Jovens', 'church/expansion-youth', body, { clickable: true });
 }

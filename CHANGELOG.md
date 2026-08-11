@@ -8,6 +8,39 @@ All notable changes to this project are documented in this file. Format based on
 
 Nothing yet.
 
+## [1.11.0] — 2026-08-11
+
+### Added
+
+- **Church → "Jovens (Expansão)" tab**: a youth-ministry census dashboard
+  built from a full Portal Expansão backup export
+  (`{ version, source, scope, counts, data: { cities, congregations,
+  youth, events, ... } }`). New connector `js/core/connectors/
+  expansionYouthConnector.js` joins each youth record against its city and
+  congregation by id (`extractExpansionYouthRows()`), filters out any
+  record flagged `isDemo` (the platform's own seed data), and persists to
+  a new `church.expansionYouth` entity type.
+- New `js/core/expansionIntelligence.js` (`computeExpansionIntelligence()`)
+  computes what a counselor/youth leader actually wants from this data:
+  active count and leader count, distribution by city, congregação, função/
+  departamento, estado civil, and pastor responsável; water-baptism and
+  Holy-Spirit-baptism coverage (%, with a "not yet baptized in water" list —
+  the clearest spiritual-growth follow-up signal in this data); and
+  upcoming birthdays (next 30 days) sorted by days-until, a classic
+  pastoral-care touchpoint.
+- The Church tab's import is a single smart-detecting field (same pattern
+  used for Acompanha+ School): it reads the file, detects whether it's the
+  full Portal Expansão backup or a flat expansion-event export, and routes
+  to the matching connector automatically — one button, not two easy-to-
+  confuse cards.
+- Dashboards gets a matching "🌍 Portal Expansão — Jovens" card (active
+  count, leaders, water-baptism %, upcoming-birthday count).
+- `church.expansionYouth` added to `KNOWN_ENTITY_TYPES`, so Export Center,
+  the generic importer, and "apagar dados de todos os módulos" all pick it
+  up automatically.
+- New in-app Test Runner regression test covering the city/congregation
+  join, the `isDemo` filter, and the wrapped-backup `expand()` detection.
+
 ## [1.10.1] — 2026-08-11
 
 ### Fixed

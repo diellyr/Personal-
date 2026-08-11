@@ -8,7 +8,7 @@ import { logAudit } from './audit.js';
 // docs/DATABASE.md for the full catalogue this mirrors).
 export const KNOWN_ENTITY_TYPES = [
   'family.spouse', 'family.child', 'family.childEvent', 'family.parentCare', 'family.home', 'family.acompanhaEvent', 'family.schoolGrade',
-  'church.role', 'church.person', 'church.agenda', 'church.sermon', 'church.project', 'church.followup', 'church.expansionEvent',
+  'church.role', 'church.person', 'church.agenda', 'church.sermon', 'church.project', 'church.followup', 'church.expansionEvent', 'church.expansionYouth',
   'finance.transaction', 'finance.goal', 'finance.debt', 'finance.investment',
   'hobbies.item', 'travel.trip',
   'health.record',

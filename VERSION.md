@@ -1,6 +1,6 @@
 # Version
 
-**Current version: `1.10.1`** — released 2026-08-11
+**Current version: `1.11.0`** — released 2026-08-11
 
 ## Versioning policy
 
@@ -52,6 +52,7 @@ without the schema version changing, and vice versa. See `docs/DATABASE.md`.
 
 | Version | Date | Highlights |
 |---|---|---|
+| `1.11.0` | 2026-08-11 | Church gets a "Jovens (Expansão)" tab: import a full Portal Expansão backup and see a youth-ministry census — distribution by city/congregação/função/estado civil/pastor, water/Holy-Spirit baptism coverage with a follow-up list, and upcoming birthdays. Dashboards gets a matching card. See `CHANGELOG.md`. |
 | `1.10.1` | 2026-08-11 | Fix: Acompanha+ School's trend-line section could crash if the browser had a torn/stale cache (some JS files updated, others not). Now degrades gracefully instead of throwing. See `CHANGELOG.md`. |
 | `1.10.0` | 2026-08-11 | Acompanha+ School gets a line-chart trend view (overall score by bimester and by semester). Dashboards' event-log and grades cards are merged into one "Acompanha+ School" card so a child with only grade data (no logged events) still shows up. See `CHANGELOG.md`. |
 | `1.9.1` | 2026-08-11 | Fix: Acompanha+ School had two confusingly similar import cards (easy to pick the wrong one, producing childless garbage records). Merged into a single import field that auto-detects the file format, plus a cleanup action for any garbage records already imported. See `CHANGELOG.md`. |

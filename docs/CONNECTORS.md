@@ -25,26 +25,35 @@ audit logging) so each concrete connector only supplies `id`, `label`, the targe
 | Acompanha+ | `family.acompanhaEvent` | Family module | `acompanhaPlusConnector.js` |
 | Backup Escola (Acompanha+) | `family.schoolGrade` | Acompanha+ School | `schoolBackupConnector.js` |
 | Portal Expansão | `church.expansionEvent` | Church module | `expansionConnector.js` |
+| Portal Expansão — Jovens | `church.expansionYouth` | Church → Jovens (Expansão) | `expansionYouthConnector.js` |
 | Pluma | `finance.transaction` | Finance module | `plumaConnector.js` |
 | Corporate Collector | `work.activity` | Work Intelligence | `corporateCollectorConnector.js` |
 | Job Sources | `jobs.posting` | Job Hunter | `jobSourceConnector.js` |
 
-### Backup Escola — the one connector that doesn't consume flat rows
+### Connectors that join relational tables instead of consuming flat rows
 
-Every connector above maps a flat array of already-record-shaped rows
-(`raw -> mapRecord(raw) -> entity`). Backup Escola's source is different: a
-full relational export (`{ generatedAt, tables: { students, assessments,
-activities, assessmentCategories, grades, assessmentScales, ... } }`) with
-no top-level array, so the generic JSON parser wraps it as a single-element
-array containing the whole object. `SchoolBackupConnector.expand()` detects
-that shape and calls `extractSchoolBackupRows(tables)`, which joins
-`assessments -> activities -> assessmentCategories` (Regular/Bom/Ótimo
-competency assessments) and `grades -> assessmentScales` (numeric or concept
-subject grades), filters out any student flagged `isDemo` (the school
-platform's own seed data, not this family's), and normalizes both onto a
-comparable 0–10 `scoreValue`. `preview()`/`import()` are overridden to run
-`expand()` first, then delegate to `BaseConnector`, so it plugs into the
-existing per-connector import card with zero UI changes.
+Most connectors map a flat array of already-record-shaped rows
+(`raw -> mapRecord(raw) -> entity`). Two don't, because their source export
+is a full relational dump with no top-level array — the generic JSON parser
+wraps the whole object as a single-element array, and the connector's
+`expand()` override detects that shape and joins the relevant tables itself
+before handing off to `BaseConnector`'s normal preview/import/dedup:
+
+- **Backup Escola** (`{ generatedAt, tables: { students, assessments,
+  activities, assessmentCategories, grades, assessmentScales, ... } }`):
+  `extractSchoolBackupRows(tables)` joins `assessments -> activities ->
+  assessmentCategories` (Regular/Bom/Ótimo competency assessments) and
+  `grades -> assessmentScales` (numeric or concept subject grades), filters
+  out any student flagged `isDemo`, and normalizes both onto a comparable
+  0–10 `scoreValue`.
+- **Portal Expansão — Jovens** (`{ version, source, scope, counts, data: {
+  cities, congregations, youth, events, ... } }`): `extractExpansionYouthRows(data)`
+  joins each youth record against its city and congregation by id, filters
+  out any youth flagged `isDemo` (the platform's own seed data), and maps
+  baptism/leadership/department fields for the ministry-census dashboard in
+  Church → Jovens (Expansão).
+
+Both plug into the existing per-connector import card with zero UI changes.
 
 Every connector today supports:
 
