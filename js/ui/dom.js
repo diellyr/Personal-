@@ -53,12 +53,4 @@ export function fmtMoney(value, currency = 'BRL') {
   }
 }
 
-export function todayIso() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-export function daysBetween(a, b) {
-  const d1 = new Date(a.length <= 10 ? a + 'T00:00:00' : a);
-  const d2 = new Date(b.length <= 10 ? b + 'T00:00:00' : b);
-  return Math.round((d2 - d1) / 86400000);
-}
+export { todayIso, daysBetween, addDays, startOfWeek, startOfMonth } from '../core/dateUtils.js';
