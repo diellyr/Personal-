@@ -56,14 +56,14 @@ export async function render(container, ctx) {
       ]))
     : emptyState({ icon: '📅', title: 'Nada agendado', message: 'Sem compromissos futuros registrados para a família.' }));
 
-  root.appendChild(sectionTitle('🎓 Acompanha+ (integração escolar)'));
+  root.appendChild(sectionTitle('🎓 Acompanha+ School (integração escolar)'));
   root.appendChild(h('div', { class: 'card' }, [
     h('div', { class: 'flex-between' }, [
       h('div', {}, [
         h('strong', {}, connMeta ? `Status: ${connMeta.status}` : 'Ainda não conectado'),
-        h('p', {}, connMeta ? `${connMeta.totalRecordsImported || 0} registro(s) importado(s) · última importação: ${connMeta.lastImportAt ? fmtDate(connMeta.lastImportAt) : '—'}` : 'Importe dados do Acompanha+ (JSON/CSV) na Integration Center.'),
+        h('p', {}, connMeta ? `${connMeta.totalRecordsImported || 0} registro(s) importado(s) · última importação: ${connMeta.lastImportAt ? fmtDate(connMeta.lastImportAt) : '—'}` : 'Importe dados do Acompanha+ (JSON/CSV) no módulo dedicado.'),
       ]),
-      h('button', { class: 'btn', onClick: () => navigate('/admin-integrations') }, 'Gerenciar conector'),
+      h('button', { class: 'btn', onClick: () => navigate('/acompanha-plus') }, 'Abrir Acompanha+ School →'),
     ]),
   ]));
   if (acompanha.length) {

@@ -21,6 +21,7 @@ export const MODULES = [
 
   { key: 'family', label: 'Family', group: 'LIFE', icon: '👨‍👩‍👧‍👦', permission: 'family', loader: () => import('../modules/familyModule.js') },
   { key: 'family-hub', label: 'Family Hub', group: 'LIFE', icon: '🧩', permission: 'family', loader: () => import('../modules/familyHub.js') },
+  { key: 'acompanha-plus', label: 'Acompanha+ School', group: 'LIFE', icon: '🎓', permission: 'family', loader: () => import('../modules/acompanhaPlusModule.js') },
   { key: 'church', label: 'Church', group: 'LIFE', icon: '⛪', permission: 'church', loader: () => import('../modules/churchModule.js') },
   { key: 'finance', label: 'Finance', group: 'LIFE', icon: '💰', permission: 'finance', loader: () => import('../modules/financeModule.js') },
   { key: 'hobbies-travel', label: 'Hobbies & Travel', group: 'LIFE', icon: '🧳', permission: 'hobbies', loader: () => import('../modules/hobbiesTravelModule.js') },

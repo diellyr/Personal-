@@ -9,10 +9,11 @@ Today/Week/Month views, 3 top priorities, indicators, agenda aggregated from Tas
 Church + Job interviews + Travel, and a live preview of AI Chief of Staff insights.
 
 ## Dashboards (`#/dashboards`)
-Central chart aggregation across modules — Finance, Work, Career, English, Life
-Balance, Jobs, Church — each card reusing that module's own Intelligence compute
-function and gated by the same module permission its full screen uses. Links back
-to each module for the full drill-down. `js/modules/dashboardsModule.js`.
+Central chart aggregation across modules — Finance, Acompanha+ School, Work, Career,
+English, Life Balance, Jobs, Church — each card reusing that module's own
+Intelligence compute function and gated by the same module permission its full
+screen uses. Links back to each module for the full drill-down.
+`js/modules/dashboardsModule.js`.
 
 ## Life
 - **Family** (`#/family`) — Esposo(a)/Casal, Filhos, Compromissos dos filhos,
@@ -20,6 +21,11 @@ to each module for the full drill-down. `js/modules/dashboardsModule.js`.
 - **Family Hub** (`#/family-hub`) — shared dashboard for both accounts: upcoming
   family events, Family Load indicator, Acompanha+ integration status.
   `js/modules/familyHub.js`.
+- **Acompanha+ School** (`#/acompanha-plus`) — dedicated home for Acompanha+
+  school-tracking data: an embedded import card (JSON/CSV or demo dataset,
+  reusing Import Center's connector card), a per-child summary (evolution,
+  activities, recommendations, alerts, financeiro escolar), and a full CRUD
+  table. `js/modules/acompanhaPlusModule.js`.
 - **Church** (`#/church`) — Funções e Cargos, Pessoas, Agenda, Pregações e Estudos,
   Projetos, Acompanhamento, and Church Intelligence (People Attention Radar,
   Leadership Load, Ministry Health). `js/modules/churchModule.js`,

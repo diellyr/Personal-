@@ -8,6 +8,35 @@ All notable changes to this project are documented in this file. Format based on
 
 Nothing yet.
 
+## [1.8.0] — 2026-08-11
+
+### Added
+
+- **Dedicated "Acompanha+ School" module** (`js/modules/acompanhaPlusModule.js`,
+  registered in `js/core/moduleRegistry.js` under the Life group). Previously
+  Acompanha+ data (`family.acompanhaEvent`) only surfaced as a small
+  read-only widget inside Family Hub, with import reachable only through the
+  Import Center — there was no dedicated place to browse, edit, or import it.
+  The new module has: a working import card (reusing the exact same
+  `connectorCard()` — with progress feedback — from Import Center, so
+  there's one import implementation, not two), a per-child summary (latest
+  evolution, activities, recommendations, alerts, financial/scholarship
+  notes), and a full CRUD table for manual edits.
+- **Dashboards: Acompanha+ School card.** The central Dashboards module now
+  has a card showing records-by-child and active-alert count, clickable
+  through to the new module — same pattern as the Finance card.
+- `connectorCard()` (`js/modules/importExportCenter.js`) gained an optional
+  `onImported` callback, fired after both the demo-dataset button and a real
+  file import succeed, so pages embedding the card elsewhere (like the new
+  Acompanha+ module) can refresh their own views without polling.
+- `renderEntityCrud()`'s returned `repaint` handle is now used by the new
+  module to refresh its table after an import completes.
+
+### Changed
+
+- Family Hub's Acompanha+ widget now links to the dedicated module
+  ("Abrir Acompanha+ School →") instead of the generic Integration Center.
+
 ## [1.7.1] — 2026-08-11
 
 ### Changed

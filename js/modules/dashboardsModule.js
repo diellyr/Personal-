@@ -31,13 +31,15 @@ export async function render(container, ctx) {
   // Dashboards is a read-only aggregation view, not a permission bypass. A
   // user without VIEW on Jobs (e.g. FAMILY_ADMIN by default) won't see the
   // Jobs card here either, same as it's hidden from their sidebar.
-  const [canFinance, canWork, canCareer, canEnglish, canIntelligence, canJobs, canChurch] = await Promise.all([
+  const [canFinance, canWork, canCareer, canEnglish, canIntelligence, canJobs, canChurch, canFamily] = await Promise.all([
     can(user, 'finance', 'VIEW'), can(user, 'work', 'VIEW'), can(user, 'career', 'VIEW'),
     can(user, 'english', 'VIEW'), can(user, 'intelligence', 'VIEW'), can(user, 'jobs', 'VIEW'), can(user, 'church', 'VIEW'),
+    can(user, 'family', 'VIEW'),
   ]);
 
   const cardBuilders = [
     canFinance && financeCard,
+    canFamily && acompanhaCard,
     canWork && workCard,
     canCareer && careerCard,
     canEnglish && englishCard,
@@ -86,6 +88,21 @@ async function financeCard() {
     h('div', { class: 'muted', style: 'margin-top:6px' }, `Projeção 12 meses: ${fmtMoney(forecast.projection12)}`),
   ]);
   return cardShell(`💰 Financeiro — ${currentMonth.label}/${breakdown.year}`, 'finance', body, { clickable: true });
+}
+
+async function acompanhaCard(user) {
+  const all = (await new EntityRepository('family.acompanhaEvent').findAll()).filter((r) => canViewResource(user, r));
+  const byChild = {};
+  all.forEach((r) => { const c = r.data.childName || 'Sem nome'; byChild[c] = (byChild[c] || 0) + 1; });
+  const data = Object.entries(byChild).map(([label, value]) => ({ label, value }));
+  const alerts = all.filter((r) => r.data.alert).length;
+  const body = h('div', {}, [
+    data.length
+      ? barChart(data, { height: 140, color: '#f59e0b' })
+      : emptyState({ icon: '🎓', title: 'Sem dados do Acompanha+ ainda' }),
+    h('div', { class: 'muted', style: 'margin-top:6px' }, alerts ? `⚠️ ${alerts} alerta(s) ativo(s) entre os filhos acompanhados.` : '✅ Nenhum alerta ativo.'),
+  ]);
+  return cardShell('🎓 Acompanha+ School — registros por filho(a)', 'acompanha-plus', body, { clickable: true });
 }
 
 async function workCard() {

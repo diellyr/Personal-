@@ -87,7 +87,7 @@ function renderImport(c) {
   ]));
 }
 
-function connectorCard(conn) {
+export function connectorCard(conn, { onImported } = {}) {
   const statusHost = h('div', {});
   const fileInput = h('input', { type: 'file', accept: '.json,.csv' });
   const previewHost = h('div', { style: 'margin-top:10px' });
@@ -101,7 +101,7 @@ function connectorCard(conn) {
     ]));
     statusHost.appendChild(h('p', { class: 'muted' }, `${status.totalRecordsImported || 0} registro(s) importado(s) no total.`));
     statusHost.appendChild(h('div', { class: 'flex gap-8' }, [
-      h('button', { class: 'btn btn-sm', onClick: async () => { await conn.importDemoDataset(); reportSuccess(`${conn.label}: dataset demo importado.`); paint(); } }, 'Importar dataset demo'),
+      h('button', { class: 'btn btn-sm', onClick: async () => { await conn.importDemoDataset(); reportSuccess(`${conn.label}: dataset demo importado.`); paint(); if (onImported) onImported(); } }, 'Importar dataset demo'),
     ]));
   }
 
@@ -146,6 +146,7 @@ function connectorCard(conn) {
             fileInput.value = '';
             clear(previewHost);
             paint();
+            if (onImported) onImported();
           } catch (err) {
             reportError(err, conn.id);
             btn.disabled = false;
