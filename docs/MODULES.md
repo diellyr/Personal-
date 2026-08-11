@@ -23,11 +23,13 @@ the full drill-down. `js/modules/dashboardsModule.js`.
   family events, Family Load indicator, Acompanha+ integration status.
   `js/modules/familyHub.js`.
 - **Acompanha+ School** (`#/acompanha-plus`) — dedicated home for Acompanha+
-  school-tracking data: two embedded import cards (JSON/CSV or demo dataset,
-  reusing Import Center's connector cards) — one for Acompanha+ event data,
-  one for a full school-system backup export — a per-child summary
-  (evolution, activities, recommendations, alerts, financeiro escolar), a
-  full CRUD table, and an "Evolução escolar" section per selected child:
+  school-tracking data: a single import field (JSON/CSV or demo dataset) that
+  auto-detects whether the file is a plain Acompanha+ export or a full
+  school-system backup and routes to the matching connector — plus a cleanup
+  action for any childless/garbage records from a wrong-format import — a
+  per-child summary (evolution, activities, recommendations, alerts,
+  financeiro escolar), a full CRUD table, and an "Evolução escolar" section
+  per selected child:
   current-vs-previous bimester and semester comparison (radar chart +
   grouped bar chart) across competency categories, a separate evolution
   chart per category across every bimester on record, a combined

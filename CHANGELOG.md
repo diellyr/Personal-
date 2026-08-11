@@ -8,6 +8,32 @@ All notable changes to this project are documented in this file. Format based on
 
 Nothing yet.
 
+## [1.9.1] — 2026-08-11
+
+### Fixed
+
+- **Acompanha+ School's two import cards were confusing enough to pick the
+  wrong one.** Having a separate card for "Acompanha+ events" and "backup
+  completo da escola" side by side meant it was easy to feed a file to the
+  wrong connector — e.g. a school backup fed to the plain Acompanha+
+  connector maps to a single record with every field empty/defaulted
+  (`childName: undefined`, `category: 'Desempenho'`), and since that record
+  has no stable id, every retry adds another one, silently accumulating
+  garbage. Replaced both cards with a single import field: it reads the
+  file, detects whether it's a full school-backup export or a flat
+  Acompanha+ export, and routes to the correct connector automatically —
+  there's only one button to press.
+- Added a cleanup action ("Remover registros inválidos") that finds and
+  deletes any `family.acompanhaEvent` / `family.schoolGrade` record with no
+  `childName` (the signature of a wrong-file import) after a confirmation
+  dialog showing exactly how many will be removed. Legitimate records are
+  never touched. Also fixes the Dashboards "Acompanha+ School" card, which
+  was grouping those garbage rows into a dominant "Sem nome" bar.
+- `paintSummary()` and `paintEvolution()` in `acompanhaPlusModule.js` now
+  catch and display their own errors instead of letting an exception in one
+  silently prevent the rest of the page (summary, evolution charts, CRUD
+  table) from rendering.
+
 ## [1.9.0] — 2026-08-11
 
 ### Added

@@ -15,7 +15,7 @@ const CONNECTORS = [acompanhaPlusConnector, schoolBackupConnector, expansionConn
 // Progress callbacks fire once per record, which for a few thousand records
 // is far more often than the DOM needs to repaint — throttle to keep large
 // imports from also becoming slow because of layout thrashing.
-function throttleProgress(fn, everyMs = 150) {
+export function throttleProgress(fn, everyMs = 150) {
   let last = 0;
   return (done, total) => {
     const now = Date.now();

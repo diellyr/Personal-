@@ -93,9 +93,9 @@ async function financeCard() {
 }
 
 async function acompanhaCard(user) {
-  const all = (await new EntityRepository('family.acompanhaEvent').findAll()).filter((r) => canViewResource(user, r));
+  const all = (await new EntityRepository('family.acompanhaEvent').findAll()).filter((r) => canViewResource(user, r) && r.data.childName);
   const byChild = {};
-  all.forEach((r) => { const c = r.data.childName || 'Sem nome'; byChild[c] = (byChild[c] || 0) + 1; });
+  all.forEach((r) => { const c = r.data.childName; byChild[c] = (byChild[c] || 0) + 1; });
   const data = Object.entries(byChild).map(([label, value]) => ({ label, value }));
   const alerts = all.filter((r) => r.data.alert).length;
   const body = h('div', {}, [
