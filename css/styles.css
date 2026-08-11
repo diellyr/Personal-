@@ -126,6 +126,22 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; colo
   gap: 8px;
 }
 #sidebar .brand small { display:block; font-weight: 400; font-size: 11px; color: var(--text-inverse-muted); }
+.version-tag {
+  font-size: 10.5px; font-weight: 650; padding: 1px 7px; border-radius: 999px;
+  background: rgba(255,255,255,0.12); color: var(--text-inverse-muted); white-space: nowrap;
+}
+.version-tag.login { background: var(--bg); color: var(--text-muted); border: 1px solid var(--border); }
+
+#version-banner {
+  background: var(--warning-bg); color: var(--warning); border-bottom: 1px solid var(--warning);
+  padding: 9px 16px; font-size: 13px; font-weight: 600; text-align: center;
+  display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;
+  position: relative; z-index: 500;
+}
+#version-banner button {
+  background: var(--warning); color: #fff; border: none; padding: 4px 12px; border-radius: var(--radius-sm);
+  font-weight: 700; font-size: 12.5px; cursor: pointer;
+}
 #sidebar nav { flex: 1; padding: 6px 8px 16px; }
 .nav-group { margin-top: 14px; }
 .nav-group-label {

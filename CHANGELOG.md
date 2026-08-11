@@ -8,6 +8,31 @@ All notable changes to this project are documented in this file. Format based on
 
 Nothing yet.
 
+## [1.5.0] — 2026-08-11
+
+### Added
+
+- **Version display**: the running app's version now shows below "Dielly OS" on the
+  login screen and next to it in the sidebar once logged in (`js/core/version.js`).
+- **Stale-build warning**: a persistent banner (visible on both the login screen and
+  the logged-in shell) appears whenever the JS actually running in the browser is
+  older than what's deployed — checked on load and every 5 minutes via a
+  `cache: 'no-store'` fetch of `/version.json`, so it can't be fooled by HTTP/CDN
+  caching. Includes an "Atualizar agora" button that forces a fresh navigation.
+  `js/core/versionCheck.js`. See "Live version display & stale-build warning" in
+  `VERSION.md` for the release checklist this introduces (4 files must move together:
+  `js/core/version.js`, `version.json`, `VERSION.md`, `CHANGELOG.md`).
+
+### Investigated
+
+- User reported the previous release (custom roles, v1.4.0) "didn't work." Confirmed
+  via the GitHub Actions API that the `pages-build-deployment` workflow completed
+  successfully for that exact commit — the deployment pipeline itself was healthy.
+  Could not reach the live URL directly to see what the user saw (blocked by this
+  environment's network egress policy). Most likely explanation: browser cache
+  (especially on mobile) serving a pre-update copy, or checking before the ~1-2 minute
+  deploy finished — which this release's version banner now makes self-diagnosing.
+
 ## [1.4.0] — 2026-08-11
 
 ### Added

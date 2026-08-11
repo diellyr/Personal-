@@ -4,12 +4,16 @@ import { can, isOwner } from '../../core/permissions.js';
 import { currentRoute, navigate } from '../../core/router.js';
 import { isModuleEnabled } from '../../core/moduleManager.js';
 import { closeSidebar } from './sidebarToggle.js';
+import { APP_VERSION } from '../../core/version.js';
 
 export async function renderSidebar(container, user) {
   clear(container);
   container.appendChild(h('div', { class: 'brand' }, [
     h('span', {}, '🧭'),
-    h('div', {}, [h('div', {}, 'Dielly OS'), h('small', {}, 'Personal+')]),
+    h('div', {}, [
+      h('div', { class: 'flex gap-8', style: 'align-items:baseline' }, ['Dielly OS', h('span', { class: 'version-tag' }, `v${APP_VERSION}`)]),
+      h('small', {}, 'Personal+'),
+    ]),
   ]));
   const nav = h('nav', {});
   const { moduleKey: activeKey } = currentRoute();
