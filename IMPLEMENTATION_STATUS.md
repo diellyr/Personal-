@@ -85,7 +85,7 @@ across reload, permission boundaries, backup/restore, import/export).
 | Owner: Corporate Collector | YES | YES | YES | Owner-only | Demo dataset | YES | Sanitized preview before import |
 | Notification Center | YES | YES | YES | per-user | YES | YES | Bell dropdown, read/unread/resolved |
 | Global Search | YES | YES | reads all modules | respects visibility | YES | YES | |
-| Global Calendar | YES | YES | reads 8 sources | respects visibility | YES | YES | Category filters |
+| Global Calendar | YES | YES | reads 8 sources | respects visibility | YES | YES | Month grid view + color-coded categories, plus full list |
 | Task Engine | YES | YES | YES | YES | YES | YES | Central to all modules |
 | Responsive layout | YES | YES | N/A | N/A | N/A | YES | Desktop-first, tablet/mobile functional |
 | Dark/light mode | YES | YES | localStorage | N/A | N/A | YES | |

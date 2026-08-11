@@ -339,6 +339,29 @@ hr.sep { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
 .link-btn { background: none; border: none; color: var(--brand); cursor: pointer; padding: 0; font-weight: 600; font-size: 13px; }
 .pill-list { display: flex; flex-wrap: wrap; gap: 6px; }
 
+/* ---- Calendar grid ---- */
+.calendar-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.calendar-nav h3 { margin: 0; text-transform: capitalize; }
+.calendar-legend { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.category-chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 650; color: #fff; white-space: nowrap; }
+.category-chip.outline { background: none !important; border: 1px solid var(--border-strong); color: var(--text) !important; }
+.calendar-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.calendar-dow { background: var(--bg-elevated); padding: 6px 4px; text-align: center; font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+.calendar-cell { background: var(--bg-elevated); min-height: 84px; padding: 6px; cursor: pointer; display: flex; flex-direction: column; gap: 4px; }
+.calendar-cell:hover { background: var(--bg); }
+.calendar-cell.out-month { background: var(--bg); opacity: .45; }
+.calendar-cell.today .calendar-day-number { background: var(--brand); color: #fff; border-radius: 50%; }
+.calendar-cell.selected { box-shadow: inset 0 0 0 2px var(--brand); }
+.calendar-day-number { font-size: 12px; font-weight: 650; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; }
+.calendar-dots { display: flex; flex-wrap: wrap; gap: 3px; }
+.calendar-more { font-size: 10px; color: var(--text-muted); font-weight: 650; }
+
+@media (max-width: 860px) {
+  .calendar-cell { min-height: 52px; padding: 4px; }
+  .calendar-dow { font-size: 9px; padding: 4px 2px; }
+}
+
 /* ---- Mobile navigation ---- */
 .menu-toggle { display: none; }
 #sidebar-backdrop { display: none; }

@@ -82,8 +82,11 @@ Clique em uma notificação para marcá-la como lida.
 
 - **Global Search**: digite qualquer termo (nome de pessoa, projeto, vaga, viagem,
   decisão…) e o sistema procura em todos os módulos aos quais você tem acesso.
-- **Global Calendar**: todos os compromissos (família, igreja, viagens, entrevistas,
-  saúde, estudos) em uma lista só, com filtro por categoria.
+- **Global Calendar**: calendário mensal de verdade — navegue entre os meses,
+  cada categoria (Família, Igreja, Viagens, Carreira, Entrevistas, Saúde,
+  Estudos, Tarefas) tem uma cor própria, clique numa categoria na legenda para
+  mostrar/ocultar, e clique em qualquer dia para ver os compromissos daquele
+  dia. Uma lista completa de todos os próximos compromissos fica logo abaixo.
 
 ## 8. Módulos por área
 

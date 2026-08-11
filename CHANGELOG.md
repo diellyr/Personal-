@@ -8,6 +8,28 @@ All notable changes to this project are documented in this file. Format based on
 
 Nothing yet.
 
+## [1.3.0] — 2026-08-11
+
+### Added
+
+- **Global Calendar month grid** (`js/modules/globalCalendar.js`): the module was
+  list-only before — now it renders an actual month calendar (prev/next
+  navigation, today highlighted, click any day to see its items below). Every
+  category (Family, Church, Travel, Career, Interview, Health, Studies, Task)
+  has a fixed, distinct color used consistently as the grid dots, the legend
+  chips, and the list badges. A day cell shows one dot per distinct category
+  present (not one per item, so a day with 6 tasks doesn't drown out the other
+  categories) plus a total item count. Clicking a legend chip toggles that
+  category everywhere (grid, selected-day panel, and the full list) at once.
+  The existing chronological list is kept below the grid for a full overview.
+
+### Fixed
+
+- A class-name mismatch between the CSS (`.category-dot`) and the JS
+  (`.calendar-dot`) meant the very first version of this grid rendered dots
+  with a color but no size — caught immediately via automated screenshot
+  comparison before shipping.
+
 ## [1.2.0] — 2026-08-11
 
 ### Added
