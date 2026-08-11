@@ -8,6 +8,7 @@ import { acompanhaPlusConnector } from '../core/connectors/acompanhaPlusConnecto
 import { userRepository } from '../core/entities/userRepository.js';
 import { getCurrentUser, setCurrentUser } from '../core/session.js';
 import { createRole, deleteRole, setRolePermission, listRoles } from '../core/roleService.js';
+import { parseJSON } from '../core/importUtils.js';
 
 export async function render(container, ctx) {
   clear(container);
@@ -118,6 +119,25 @@ async function run(host) {
     await deleteRole(role.id);
     const rolesAfter = await listRoles();
     if (rolesAfter.some((r) => r.data.name === uniqueName)) throw new Error('role still present after delete');
+  });
+
+  await test('Import: parseJSON finds the record list under an unanticipated wrapper key', async () => {
+    // Regression test for a real bug: a Pluma export shaped like
+    // { exportedAt, totalTransactions, transactions: [...] } was treated as
+    // ONE malformed record because only records/items/data were recognized.
+    const wrapped = JSON.stringify({ exportedAt: 'x', totalTransactions: 2, transactions: [{ a: 1 }, { a: 2 }] });
+    const rows = parseJSON(wrapped);
+    if (!Array.isArray(rows) || rows.length !== 2) throw new Error(`expected 2 rows, got ${JSON.stringify(rows)}`);
+
+    const bareArray = JSON.stringify([{ a: 1 }]);
+    if (parseJSON(bareArray).length !== 1) throw new Error('bare array should still parse directly');
+
+    const knownKey = JSON.stringify({ records: [{ a: 1 }, { a: 2 }, { a: 3 }] });
+    if (parseJSON(knownKey).length !== 3) throw new Error('known wrapper key "records" should still work');
+
+    const noArrayAtAll = JSON.stringify({ id: 1, name: 'solo record' });
+    const solo = parseJSON(noArrayAtAll);
+    if (solo.length !== 1 || solo[0].id !== 1) throw new Error('object with no array property should become a single-item list');
   });
 
   await test('Roles: built-in role cannot be deleted', async () => {

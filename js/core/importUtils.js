@@ -32,9 +32,27 @@ function splitCsvLine(line) {
   return out;
 }
 
+// Common wrapper shapes real exports use around the actual list of records.
+// Checked in order; the first array-valued match wins.
+const WRAPPER_KEYS = ['records', 'items', 'data', 'transactions', 'results', 'rows', 'entries', 'list'];
+
 export function parseJSON(text) {
   const data = JSON.parse(text);
-  return Array.isArray(data) ? data : (data.records || data.items || data.data || [data]);
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === 'object') {
+    for (const key of WRAPPER_KEYS) {
+      if (Array.isArray(data[key])) return data[key];
+    }
+    // Wrapper uses a key we didn't anticipate (e.g. a metadata envelope like
+    // { exportedAt, totalTransactions, someAppSpecificKey: [...] }) — if
+    // there's exactly one array-valued property, that's unambiguously the
+    // record list regardless of its name. Only falls back to treating the
+    // whole object as a single record when no array is found at all, or
+    // when there's genuine ambiguity (multiple array properties).
+    const arrayProps = Object.entries(data).filter(([, v]) => Array.isArray(v));
+    if (arrayProps.length === 1) return arrayProps[0][1];
+  }
+  return [data];
 }
 
 export function detectFormatAndParse(filename, text) {

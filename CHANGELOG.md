@@ -8,6 +8,29 @@ All notable changes to this project are documented in this file. Format based on
 
 Nothing yet.
 
+## [1.6.1] — 2026-08-11
+
+### Fixed
+
+- **JSON import silently mis-parsed wrapped exports.** `parseJSON()`
+  (`js/core/importUtils.js`) only recognized the record list under the keys
+  `records`/`items`/`data`. A real Pluma export shaped like
+  `{ exportedAt, totalTransactions, transactions: [...] }` used a key it didn't
+  anticipate, so the entire wrapper object was treated as a single malformed
+  record — every field came back empty/default (an amount of R$0,00, category
+  "Outros", today's date), producing one bogus transaction instead of the 3,266
+  real ones in the file. Fixed by widening the recognized key list and adding a
+  fallback: when the object has exactly one array-valued property, use it
+  regardless of its name — covers arbitrary wrapper shapes without needing to
+  special-case every export format. Added a regression test to the in-app Test
+  Runner (now 11/11) and re-verified end-to-end against the actual reported
+  file: all 3,266 transactions imported with correct dates, descriptions,
+  categories, and amounts.
+
+If you hit this bug before upgrading: the bogus placeholder transaction (named
+literally "Transação Pluma", R$ 0,00) can be removed with its row's "Excluir"
+button in Finance → Transações, then re-import your file.
+
 ## [1.6.0] — 2026-08-11
 
 ### Added
