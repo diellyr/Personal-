@@ -8,6 +8,22 @@ All notable changes to this project are documented in this file. Format based on
 
 Nothing yet.
 
+## [1.10.1] — 2026-08-11
+
+### Fixed
+
+- **"Erro ao montar os gráficos: Cannot read properties of undefined
+  (reading 'filter')" in Acompanha+ School's trend-line section.** This app
+  has no build step or cache-busted asset URLs, so different JS files can go
+  stale independently in a browser's cache — a user could end up with a
+  fresh `acompanhaPlusModule.js` (referencing the new `overallByBimester`/
+  `overallBySemester` fields) alongside a stale cached `schoolIntelligence.js`
+  that doesn't produce them yet. `paintChildEvolution()` now defaults both
+  to an empty array instead of assuming they exist, so a torn cache degrades
+  to "no trend chart yet" instead of throwing. If you hit this: do a full
+  hard refresh (not just the in-app "Atualizar agora") to clear all cached
+  files, not just the top-level page.
+
 ## [1.10.0] — 2026-08-11
 
 ### Added

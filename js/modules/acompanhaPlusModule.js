@@ -147,18 +147,20 @@ export async function render(container, ctx) {
         bodyHost.appendChild(emptyState({ icon: '📊', title: 'Sem avaliações por Regular/Bom/Ótimo ainda' }));
       }
 
+      const overallByBimester = ev.overallByBimester || [];
+      const overallBySemester = ev.overallBySemester || [];
       bodyHost.appendChild(h('h4', { style: 'margin:20px 0 8px' }, '📉 Tendência geral — linha do tempo'));
       bodyHost.appendChild(h('div', { class: 'grid grid-2' }, [
         h('div', { class: 'card' }, [
           h('div', { class: 'muted', style: 'font-size:12px;margin-bottom:6px' }, 'Por bimestre'),
-          ev.overallByBimester.filter((s) => s.value !== null).length >= 2
-            ? lineChart(ev.overallByBimester.filter((s) => s.value !== null), { height: 150, color: '#2952e3' })
+          overallByBimester.filter((s) => s.value !== null).length >= 2
+            ? lineChart(overallByBimester.filter((s) => s.value !== null), { height: 150, color: '#2952e3' })
             : emptyState({ icon: '📉', title: 'Precisa de 2+ bimestres com dados' }),
         ]),
         h('div', { class: 'card' }, [
           h('div', { class: 'muted', style: 'font-size:12px;margin-bottom:6px' }, 'Por semestre'),
-          ev.overallBySemester.filter((s) => s.value !== null).length >= 2
-            ? lineChart(ev.overallBySemester.filter((s) => s.value !== null), { height: 150, color: '#7c3aed' })
+          overallBySemester.filter((s) => s.value !== null).length >= 2
+            ? lineChart(overallBySemester.filter((s) => s.value !== null), { height: 150, color: '#7c3aed' })
             : emptyState({ icon: '📉', title: 'Precisa de 2+ semestres com dados' }),
         ]),
       ]));
