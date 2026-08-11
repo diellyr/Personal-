@@ -161,10 +161,17 @@ específico, em JSON ou CSV.
 
 ## 12. Administração (perfil OWNER ou com permissão de Admin)
 
-- **User Management**: criar usuários, desativar/reativar.
+- **User Management**: criar usuários, desativar/reativar. Também tem a seção
+  **Roles**, onde o Owner pode criar novas roles além de OWNER/FAMILY_ADMIN/
+  MEMBER (ex: "Contador", "Convidado") — a role nova começa sem acesso a
+  nenhum módulo até você liberar em Permission Manager, e já aparece lá
+  automaticamente assim que criada.
 - **Module Manager**: ligar/desligar módulos inteiros para toda a instalação.
-- **Permission Manager**: definir, por pessoa e por módulo, o nível de acesso
-  (Nenhum, Ver, Criar, Editar, Excluir, Admin).
+- **Permission Manager**: duas tabelas. A primeira define o acesso **padrão de
+  cada role** por módulo (Nenhum, Ver, Criar, Editar, Excluir, Admin) — inclui
+  automaticamente qualquer role nova criada em User Management. A segunda
+  permite abrir uma **exceção para uma pessoa específica** em um módulo
+  específico, por cima do padrão da role dela.
 - **Privacy Manager**: ver quantos registros de cada tipo são privados/família.
 - **Integration Center**: status de cada conector externo.
 - **Audit Log**: histórico de tudo que foi criado/editado/excluído/importado/

@@ -3,7 +3,7 @@ import { renderTabs } from '../ui/components/tabs.js';
 import { sectionTitle, statTile, badge, emptyState } from '../ui/components/misc.js';
 import { userRepository } from '../core/entities/userRepository.js';
 import { createUser } from '../core/auth.js';
-import { ROLES, MODULE_PERMISSION, loadOverrides, setOverride, removeOverride, isOwner } from '../core/permissions.js';
+import { MODULE_PERMISSION, loadOverrides, setOverride, removeOverride, isOwner } from '../core/permissions.js';
 import { MODULES } from '../core/moduleRegistry.js';
 import { getDisabledModules, setModuleEnabled } from '../core/moduleManager.js';
 import { openModal, closeModal, confirmDialog } from '../ui/components/modal.js';
@@ -22,6 +22,7 @@ import { storeNames, SCHEMA_VERSION } from '../core/db.js';
 import { dataProvider } from '../core/indexedDbProvider.js';
 import { estimateStorage } from '../core/db.js';
 import { clearAllModulesData } from '../core/dataManagementService.js';
+import { listRoles, listAssignableRoleNames, createRole, deleteRole, getRolePermissionsMap, setRolePermission, ALL_MODULE_KEYS } from '../core/roleService.js';
 
 const CONNECTORS = [acompanhaPlusConnector, expansionConnector, plumaConnector, corporateCollectorConnector, jobSourceConnector];
 
@@ -62,15 +63,59 @@ async function renderUsers(c, currentUser) {
       } }, u.status === 'ACTIVE' ? 'Desativar' : 'Reativar') : ''),
     ]))),
   ])));
+
+  if (isOwner(currentUser)) {
+    c.appendChild(sectionTitle('🎭 Roles', h('button', { class: 'btn btn-primary', onClick: () => openRoleForm(c, currentUser) }, '+ Nova role')));
+    c.appendChild(h('p', {}, 'Roles além de OWNER/FAMILY_ADMIN/MEMBER podem ser criadas aqui. Defina os acessos de cada uma na aba Permission Manager — uma role recém-criada já aparece lá para configurar.'));
+    const roles = await listRoles();
+    const rows = [{ data: { name: 'OWNER', label: 'Owner', builtIn: true } }, ...roles];
+    c.appendChild(h('div', { class: 'table-wrap' }, h('table', { class: 'data-table' }, [
+      h('thead', {}, h('tr', {}, [h('th', {}, 'Nome'), h('th', {}, 'Rótulo'), h('th', {}, 'Tipo'), h('th', {}, '')])),
+      h('tbody', {}, rows.map((r) => h('tr', {}, [
+        h('td', {}, r.data.name), h('td', {}, r.data.label),
+        h('td', {}, r.data.builtIn ? badge('Padrão do sistema', 'neutral') : badge('Customizada', 'info')),
+        h('td', {}, !r.data.builtIn ? h('button', { class: 'btn btn-sm btn-danger', onClick: async () => {
+          const ok = await confirmDialog({ message: `Excluir a role "${r.data.name}"? Isso só é permitido se nenhum usuário estiver usando ela.` });
+          if (!ok) return;
+          try {
+            await deleteRole(r.id, async (roleName) => (await userRepository.findAll()).some((u) => u.role === roleName));
+            reportSuccess('Role excluída.');
+            renderUsers(c, currentUser);
+          } catch (err) { reportError(err, 'roles'); }
+        } }, 'Excluir') : ''),
+      ]))),
+    ])));
+  }
 }
 
-function openUserForm(container, currentUser) {
+function openRoleForm(container, currentUser) {
+  const { node, getValues, validate } = renderForm([
+    { key: 'name', label: 'Nome (identificador, ex: ACCOUNTANT)', required: true, full: true, hint: 'Será convertido para MAIÚSCULAS, sem espaços.' },
+    { key: 'label', label: 'Rótulo de exibição', required: true },
+    { key: 'description', label: 'Descrição', type: 'textarea', full: true },
+  ], {});
+  const body = h('div', {}, [node, h('div', { class: 'form-actions' }, h('button', { class: 'btn btn-primary', onClick: async () => {
+    const errors = validate();
+    if (errors.length) return reportError(new Error(errors.join(' ')));
+    const values = getValues();
+    try {
+      await createRole(values);
+      closeModal();
+      reportSuccess('Role criada. Configure os acessos dela na aba Permission Manager.');
+      renderUsers(container, currentUser);
+    } catch (err) { reportError(err, 'roles'); }
+  } }, 'Criar role'))]);
+  openModal({ title: 'Nova role', bodyNode: body });
+}
+
+async function openUserForm(container, currentUser) {
+  const assignableRoles = (await listAssignableRoleNames()).filter((r) => r !== 'OWNER');
   const { node, getValues, validate } = renderForm([
     { key: 'displayName', label: 'Nome de exibição', required: true },
     { key: 'username', label: 'Usuário', required: true },
     { key: 'email', label: 'E-mail', required: true },
     { key: 'password', label: 'Senha', type: 'password', required: true },
-    { key: 'role', label: 'Role', type: 'select', options: [ROLES.FAMILY_ADMIN, ROLES.MEMBER], required: true, hint: 'OWNER não pode ser concedido por aqui.' },
+    { key: 'role', label: 'Role', type: 'select', options: assignableRoles, required: true, hint: 'OWNER não pode ser concedido por aqui. Crie novas roles na seção "Roles" acima.' },
   ], {});
   const body = h('div', {}, [node, h('div', { class: 'form-actions' }, h('button', { class: 'btn btn-primary', onClick: async () => {
     const errors = validate();
@@ -110,7 +155,10 @@ async function renderModuleManager(c) {
 // ---- Permission Manager ----
 async function renderPermissionManager(c) {
   clear(c);
-  c.appendChild(sectionTitle('🔐 Matriz: usuário × módulo × permissão'));
+  await renderRolePermissionMatrix(c);
+
+  c.appendChild(sectionTitle('👤 Matriz: usuário × módulo × permissão (exceções por pessoa)'));
+  c.appendChild(h('p', {}, 'Sobrepõe o padrão da role de cada usuário para um módulo específico. Deixe em "(padrão do role)" para usar o valor definido acima.'));
   const users = (await userRepository.findAll()).filter((u) => u.role !== 'OWNER');
   const modulePerms = [...new Set(MODULES.map((m) => m.permission))];
   const overrides = await loadOverrides(true);
@@ -131,6 +179,35 @@ async function renderPermissionManager(c) {
         const { logAudit } = await import('../core/audit.js');
         await logAudit('PERMISSION_CHANGE', mp, `${u.displayName} -> ${select.value || 'default'}`);
         reportSuccess('Permissão atualizada.');
+      });
+      row.appendChild(h('td', {}, select));
+    });
+    tbody.appendChild(row);
+  });
+  table.appendChild(tbody);
+  c.appendChild(h('div', { class: 'table-wrap' }, table));
+}
+
+async function renderRolePermissionMatrix(c) {
+  c.appendChild(sectionTitle('🔐 Matriz: role × módulo × permissão (padrão)'));
+  c.appendChild(h('p', {}, 'Define o acesso padrão de cada role em cada módulo. OWNER sempre tem acesso total e não aparece aqui (não pode ser alterado). Roles customizadas criadas em User Management aparecem automaticamente.'));
+  const roles = await listRoles();
+  const roleNames = roles.map((r) => ({ name: r.data.name, label: r.data.label }));
+  const permMap = await getRolePermissionsMap();
+  const levels = Object.keys(MODULE_PERMISSION);
+
+  const table = h('table', { class: 'data-table' });
+  table.appendChild(h('thead', {}, h('tr', {}, [h('th', {}, 'Módulo'), ...roleNames.map((r) => h('th', {}, r.label))])));
+  const tbody = h('tbody', {});
+  ALL_MODULE_KEYS.forEach((moduleKey) => {
+    const row = h('tr', {}, [h('td', {}, moduleKey)]);
+    roleNames.forEach((r) => {
+      const current = (permMap[r.name] && permMap[r.name][moduleKey]) || 'NONE';
+      const select = h('select', {}, levels.map((l) => h('option', { value: l, selected: current === l || undefined }, l)));
+      select.value = current;
+      select.addEventListener('change', async () => {
+        await setRolePermission(r.name, moduleKey, select.value);
+        reportSuccess(`Permissão de "${r.label}" em "${moduleKey}" atualizada.`);
       });
       row.appendChild(h('td', {}, select));
     });

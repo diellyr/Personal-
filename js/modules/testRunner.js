@@ -7,6 +7,7 @@ import { generateCrossModuleInsights } from '../core/ai/crossModuleInsights.js';
 import { acompanhaPlusConnector } from '../core/connectors/acompanhaPlusConnector.js';
 import { userRepository } from '../core/entities/userRepository.js';
 import { getCurrentUser, setCurrentUser } from '../core/session.js';
+import { createRole, deleteRole, setRolePermission, listRoles } from '../core/roleService.js';
 
 export async function render(container, ctx) {
   clear(container);
@@ -99,6 +100,33 @@ async function run(host) {
   await test('Cross-Module Insights: runs without throwing and returns an array', async () => {
     const insights = await generateCrossModuleInsights();
     if (!Array.isArray(insights)) throw new Error('expected array result');
+  });
+
+  await test('Roles: custom role can be created, granted a permission, and applies to a user', async () => {
+    const uniqueName = `TESTROLE${Date.now()}`;
+    const role = await createRole({ name: uniqueName, label: 'Test Role' });
+    const roles = await listRoles();
+    if (!roles.some((r) => r.data.name === uniqueName)) throw new Error('role not found after creation');
+
+    await setRolePermission(uniqueName, 'test_module', 'EDIT');
+    const fakeUser = { id: 'test-role-user', role: uniqueName };
+    const level = await getModulePermission(fakeUser, 'test_module');
+    if (level < 3) throw new Error(`expected EDIT(3)+ for granted module, got ${level}`);
+    const ungrantedLevel = await getModulePermission(fakeUser, 'some_other_module');
+    if (ungrantedLevel !== 0) throw new Error(`expected NONE(0) for ungranted module by default, got ${ungrantedLevel}`);
+
+    await deleteRole(role.id);
+    const rolesAfter = await listRoles();
+    if (rolesAfter.some((r) => r.data.name === uniqueName)) throw new Error('role still present after delete');
+  });
+
+  await test('Roles: built-in role cannot be deleted', async () => {
+    const roles = await listRoles();
+    const familyAdmin = roles.find((r) => r.data.name === 'FAMILY_ADMIN');
+    if (!familyAdmin) throw new Error('FAMILY_ADMIN role missing — ensureBuiltInRoles() did not run');
+    let threw = false;
+    try { await deleteRole(familyAdmin.id); } catch { threw = true; }
+    if (!threw) throw new Error('deleting a built-in role should have thrown');
   });
 
   clear(host);

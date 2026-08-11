@@ -4,6 +4,7 @@ import { initToasts } from './ui/components/toast.js';
 import { initModalRoot } from './ui/components/modal.js';
 import { restoreSession, login } from './core/auth.js';
 import { ensureSeeded, loadAllSeeders } from './core/seed/seedData.js';
+import { ensureBuiltInRoles } from './core/roleService.js';
 import { renderSidebar } from './ui/layout/sidebar.js';
 import { renderHeader } from './ui/layout/header.js';
 import { initRouter, handleRoute, navigate, currentRoute } from './core/router.js';
@@ -70,6 +71,14 @@ async function renderShell(user) {
 }
 
 async function boot() {
+  try {
+    // Independent of demo-data seeding: role definitions + their per-module
+    // default permissions must exist on every boot (including a real,
+    // non-demo install), not just when the demo dataset is seeded.
+    await ensureBuiltInRoles();
+  } catch (err) {
+    reportError(err, 'roles');
+  }
   try {
     await loadAllSeeders();
     await ensureSeeded();

@@ -8,6 +8,34 @@ All notable changes to this project are documented in this file. Format based on
 
 Nothing yet.
 
+## [1.4.0] — 2026-08-11
+
+### Added
+
+- **Custom roles** (`js/core/roleService.js`): Admin → User Management now has a
+  "Roles" section where the Owner can create additional roles beyond OWNER/
+  FAMILY_ADMIN/MEMBER (e.g. "ACCOUNTANT", "GUEST"). New roles start with **no**
+  access to any module (principle of least privilege) and appear immediately —
+  no extra step needed — as a new column in Admin → Permission Manager's new
+  **role × module × permission matrix**, where the Owner sets that role's
+  default access per module. The "create user" form's role dropdown is now
+  populated dynamically from all existing roles instead of a hardcoded list.
+  Built-in roles cannot be deleted; custom roles can be deleted only while no
+  user is assigned to them.
+
+### Changed
+
+- **Role permission defaults are now data-driven**, not a hardcoded JS object.
+  `FAMILY_ADMIN` and `MEMBER`'s existing defaults were migrated 1:1 into the
+  new storage on first boot (`ensureBuiltInRoles()`, idempotent, runs every
+  boot independent of demo-data seeding) — verified via automated regression
+  that the spouse account's access is byte-for-byte unchanged after the
+  migration. `docs/PERMISSIONS.md` updated accordingly.
+
+Two new tests added to the in-app Test Runner (now 10/10): custom role
+creation + grant + apply-to-user round-trip, and built-in roles rejecting
+deletion.
+
 ## [1.3.0] — 2026-08-11
 
 ### Added

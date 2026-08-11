@@ -9,7 +9,7 @@ across reload, permission boundaries, backup/restore, import/export).
 | Module | Implemented | Functional | Persistence | Permissions | Demo Data | Tested | Notes |
 |---|---|---|---|---|---|---|---|
 | Auth (login/logout/session) | YES | YES | YES (users store) | N/A | 2 seeded users | YES | PBKDF2-SHA256 hashed passwords |
-| RBAC + Permission Manager | YES | YES | YES (permissions_overrides) | YES | Role defaults seeded | YES | Live matrix editor |
+| RBAC + Permission Manager | YES | YES | YES (admin.rolePermission + permissions_overrides) | YES | Role defaults seeded | YES | Role-level matrix + per-user override matrix |
 | Resource visibility (PRIVATE/FAMILY/CUSTOM) | YES | YES | YES | YES | Mixed demo visibility | YES | Independent axis from module permission |
 | Command Center | YES | YES | reads all modules | YES | YES | YES | Today/Week/Month views |
 | Dashboards (central chart hub) | YES | YES | reads Finance/Work/Career/English/Life Balance/Jobs/Church | YES | YES | YES | Cards gated per-module permission |
@@ -67,14 +67,14 @@ across reload, permission boundaries, backup/restore, import/export).
 | Life Balance Intelligence | YES | YES | reads all modules | YES | YES | YES | Radar, not a moral score |
 | Projects | YES | YES | YES | YES | YES | YES | |
 | Goals | YES | YES | YES | YES | YES | YES | 6 periods |
-| User Management | YES | YES | YES | Owner can create/deactivate | 2 users | YES | OWNER not grantable via UI |
+| User Management | YES | YES | YES | Owner can create/deactivate | 2 users | YES | OWNER not grantable via UI; custom role creation |
 | Import Center | YES | YES | YES | Admin | YES | YES | JSON/CSV + connectors |
 | Export Center | YES | YES | YES | Admin | YES | YES | JSON/CSV, all or per-module |
 | Backup & Restore | YES | YES | YES | Admin (restore: Owner) | YES | YES | Merge/Replace + validation |
 | Load/Delete demo data | YES | YES | YES | Owner-only | N/A | YES | Idempotent reseed; hard-deletes only DEMO_SEED-tagged records |
 | Backup Reminder | YES | YES | reads settings | Admin | YES | YES | >7 days stale flag |
 | Module Manager | YES | YES | YES (settings) | Admin | YES | YES | Enable/disable per module |
-| Permission Manager | YES | YES | YES | Admin | YES | YES | Live matrix |
+| Permission Manager | YES | YES | YES | Admin | YES | YES | Role-default matrix (auto-includes new custom roles) + per-user override matrix |
 | Privacy Manager | YES | YES | reads all modules | Admin | YES | YES | Visibility counts by type |
 | Integration Center | YES | YES | reads connectors_meta | Admin | YES | YES | All 5 connectors |
 | Audit Log | YES | YES | YES | Admin | Generated live | YES | |

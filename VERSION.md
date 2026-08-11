@@ -1,6 +1,6 @@
 # Version
 
-**Current version: `1.3.0`** — released 2026-08-11
+**Current version: `1.4.0`** — released 2026-08-11
 
 ## Versioning policy
 
@@ -28,6 +28,7 @@ without the schema version changing, and vice versa. See `docs/DATABASE.md`.
 
 | Version | Date | Highlights |
 |---|---|---|
+| `1.4.0` | 2026-08-11 | Custom roles: create new roles in User Management, configure their per-module access in Permission Manager. Role defaults are now data-driven instead of hardcoded. See `CHANGELOG.md`. |
 | `1.3.0` | 2026-08-11 | Global Calendar: real month-grid view with color-coded categories (was list-only). See `CHANGELOG.md`. |
 | `1.2.0` | 2026-08-11 | "Apagar dados de todos os módulos" bulk-clear button in Data Management. See `CHANGELOG.md`. |
 | `1.1.0` | 2026-08-11 | Mobile sidebar (off-canvas menu + hamburger toggle), Load/Delete demo data in Backup & Restore, new central Dashboards module. See `CHANGELOG.md`. |

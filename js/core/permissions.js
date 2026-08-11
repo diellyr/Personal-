@@ -1,8 +1,13 @@
 import { dataProvider } from './indexedDbProvider.js';
 
 // ---- RBAC -------------------------------------------------------------
-// Roles ordered by seniority. OWNER is reserved for exactly one account
-// (Dielly) and can never be granted by an admin — see docs/PERMISSIONS.md.
+// Built-in roles. OWNER is reserved for exactly one account (Dielly) and
+// can never be granted by an admin — see docs/PERMISSIONS.md. FAMILY_ADMIN
+// and MEMBER are the two built-in non-owner roles; additional custom roles
+// can be created at runtime (Admin -> User Management) — see
+// js/core/roleService.js. Every non-OWNER role's per-module default
+// permission is data-driven (stored in the `admin.rolePermission` entity
+// type), not hardcoded, so custom roles work exactly like built-in ones.
 export const ROLES = {
   OWNER: 'OWNER',
   FAMILY_ADMIN: 'FAMILY_ADMIN',
@@ -25,35 +30,6 @@ export const VISIBILITY = {
   CUSTOM: 'CUSTOM',
 };
 
-// Default module -> minimum-role permission matrix. This is the seed used
-// the first time the app runs; Owner > Permission Manager can layer
-// per-user overrides on top (stored in `permissions_overrides`).
-// Corporate/work data defaults to lower visibility for FAMILY_ADMIN by
-// design (see rule 102 in the product spec): work/career/jobs modules are
-// VIEW-capped for FAMILY_ADMIN regardless of records' own visibility flag.
-const DEFAULT_ROLE_MODULE_PERMISSIONS = {
-  OWNER: 'ADMIN', // OWNER role gets OWNER-level via isOwner() checks separately; ADMIN covers all module CRUD
-  FAMILY_ADMIN: {
-    default: 'EDIT',
-    work: 'VIEW',
-    career: 'VIEW',
-    jobs: 'NONE',
-    finance: 'VIEW',
-    owner: 'NONE',
-    admin: 'NONE',
-  },
-  MEMBER: {
-    default: 'VIEW',
-  },
-};
-
-function roleDefaultForModule(role, moduleKey) {
-  if (role === ROLES.OWNER) return MODULE_PERMISSION.ADMIN;
-  const cfg = DEFAULT_ROLE_MODULE_PERMISSIONS[role] || {};
-  const level = cfg[moduleKey] || cfg.default || 'NONE';
-  return MODULE_PERMISSION[level];
-}
-
 export function isOwner(user) {
   return !!user && user.role === ROLES.OWNER;
 }
@@ -67,6 +43,31 @@ export async function loadOverrides(force = false) {
 
 export function invalidateOverrideCache() {
   overridesCache = null;
+}
+
+// Role-level default permissions (one row per role+module, in the
+// `records` store under entityType 'admin.rolePermission'). Read directly
+// via dataProvider here (not through roleService.js, which writes this
+// data) to avoid a circular import — roleService.js imports
+// invalidateRolePermissionCache from this file.
+let rolePermCache = null;
+async function loadRolePermissions(force = false) {
+  if (rolePermCache && !force) return rolePermCache;
+  const all = await dataProvider.getAllByIndex('records', 'entityType', 'admin.rolePermission');
+  rolePermCache = all.filter((r) => !r.deleted_at);
+  return rolePermCache;
+}
+
+export function invalidateRolePermissionCache() {
+  rolePermCache = null;
+}
+
+async function roleDefaultForModule(role, moduleKey) {
+  const rows = await loadRolePermissions();
+  const entry = rows.find((r) => r.data.role === role && r.data.module === moduleKey);
+  // No row = no access. Safe for brand-new custom roles (principle of
+  // least privilege) and for any module added after a role was created.
+  return entry ? (MODULE_PERMISSION[entry.data.permission] ?? MODULE_PERMISSION.NONE) : MODULE_PERMISSION.NONE;
 }
 
 export async function getModulePermission(user, moduleKey) {

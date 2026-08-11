@@ -13,17 +13,40 @@ NONE=0 < VIEW=1 < CREATE=2 < EDIT=3 < DELETE=4 < ADMIN=5 < OWNER=6
 Roles:
 
 - **OWNER** — exactly one account (`dielly`). Always resolves to the max level for
-  every module. Cannot be granted through the UI (`docs/SECURITY.md`).
-- **FAMILY_ADMIN** — default EDIT on most modules; VIEW-only on `work`/`career`; NONE
-  on `jobs`/`admin`/`owner` by default (corporate/job-search data stays private to the
-  account that owns the career, per rule 102 of the spec). All defaults are
-  overridable per user via Admin → Permission Manager.
-- **MEMBER** — default VIEW everywhere (reserved for future accounts).
+  every module. Cannot be granted through the UI (`docs/SECURITY.md`), and is a
+  hardcoded special case — never a row in any permissions table.
+- **FAMILY_ADMIN** and **MEMBER** — the two built-in non-owner roles.
+- **Custom roles** — the Owner can create additional roles at runtime (Admin → User
+  Management → "Roles" → "+ Nova role"), e.g. "ACCOUNTANT" or "GUEST". A new role
+  starts with **NONE on every module** (principle of least privilege) until the Owner
+  grants it access. See `js/core/roleService.js`.
 
-Admin → Permission Manager renders a live matrix (module × user × permission) backed
-by the `permissions_overrides` store; changing a cell calls `setOverride`/
-`removeOverride` and writes a `PERMISSION_CHANGE` audit entry immediately — no save
-button, no page reload needed.
+Role-level default permissions are **data-driven**, not hardcoded: every non-OWNER
+role has one row per module in the `admin.rolePermission` entity type (managed by
+`js/core/roleService.js`, cached and read by `js/core/permissions.js`). This applies
+uniformly to FAMILY_ADMIN, MEMBER, and every custom role — there's no special-cased
+built-in-vs-custom logic in the permission-resolution path itself, only in whether a
+role can be deleted (built-in roles can't) or renamed.
+
+`ensureBuiltInRoles()` runs on every boot (independent of demo-data seeding) and is
+idempotent: on a fresh install it creates the `FAMILY_ADMIN`/`MEMBER` role rows with
+the same defaults this file used to hardcode (EDIT on most modules for FAMILY_ADMIN,
+VIEW-only on `work`/`career`, NONE on `jobs`/`admin`/`owner`; VIEW everywhere for
+MEMBER) — corporate/job-search data stays private to the account that owns the
+career, per rule 102 of the spec. On a later boot it's a no-op for roles that already
+exist, so an Owner's customizations are never overwritten.
+
+Admin → Permission Manager renders two live matrices:
+
+1. **Role × module × permission (default)** — sets each role's baseline access.
+   Newly created roles appear here automatically (it just queries all roles fresh on
+   render) — no extra wiring needed between "create role" and "configure its access".
+2. **User × module × permission (exceptions)** — per-user overrides on top of #1,
+   backed by the `permissions_overrides` store, unchanged from before.
+
+Both call their respective `set*Permission`/`removeOverride` functions and write a
+`PERMISSION_CHANGE` audit entry immediately on change — no save button, no page
+reload needed.
 
 Every router navigation and every sidebar item is gated by `can(user, moduleKey,
 'VIEW')`; every entity module's create/edit/delete buttons are independently gated by
@@ -64,7 +87,9 @@ what they can do with it.
 
 - `OWNER` role can only exist because it was seeded (`js/core/seed/seedData.js`) —
   there is no UI path that grants `OWNER`. Admin → User Management's "new user" form
-  offers only `FAMILY_ADMIN`/`MEMBER` in its role selector.
+  offers every existing role (built-in and custom) except `OWNER`, which is filtered
+  out unconditionally in `js/core/roleService.js`'s `createRole()` (the name `OWNER`
+  is rejected outright, even as a custom role name).
 - Owner-only screens (`js/modules/ownerModule.js`) are additionally guarded by
   `isOwner(user)` in the router (`def.ownerOnly`), independent of the module
   permission system — even an ADMIN-level override could not open them.
