@@ -2,6 +2,7 @@ import { findModule } from './moduleRegistry.js';
 import { getCurrentUser } from './session.js';
 import { can, isOwner } from './permissions.js';
 import { reportError, reportWarning } from './errorHandler.js';
+import { isModuleEnabled } from './moduleManager.js';
 
 let contentEl = null;
 let onRouteChange = null;
@@ -39,6 +40,10 @@ export async function handleRoute() {
   }
   if (def.ownerOnly && !isOwner(user)) {
     contentEl.innerHTML = `<div class="empty-state"><h2>Acesso restrito</h2><p>Este módulo é exclusivo do OWNER.</p></div>`;
+    return;
+  }
+  if (!def.key.startsWith('admin-') && !def.key.startsWith('owner-') && !(await isModuleEnabled(def.key)) && !isOwner(user)) {
+    contentEl.innerHTML = `<div class="empty-state"><h2>Módulo desativado</h2><p>Este módulo foi desativado pelo administrador.</p></div>`;
     return;
   }
   const allowed = await can(user, def.permission, 'VIEW');

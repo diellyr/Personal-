@@ -2,6 +2,7 @@ import { h, clear } from '../dom.js';
 import { NAV_GROUPS, MODULES } from '../../core/moduleRegistry.js';
 import { can, isOwner } from '../../core/permissions.js';
 import { currentRoute, navigate } from '../../core/router.js';
+import { isModuleEnabled } from '../../core/moduleManager.js';
 
 export async function renderSidebar(container, user) {
   clear(container);
@@ -17,6 +18,7 @@ export async function renderSidebar(container, user) {
     const visible = [];
     for (const m of mods) {
       if (m.ownerOnly && !isOwner(user)) continue;
+      if (!m.key.startsWith('admin-') && !m.key.startsWith('owner-') && !isOwner(user) && !(await isModuleEnabled(m.key))) continue;
       if (await can(user, m.permission, 'VIEW')) visible.push(m);
     }
     if (!visible.length) continue;
