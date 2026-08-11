@@ -1,6 +1,7 @@
 import { dataProvider } from './indexedDbProvider.js';
 import { uuid, nowIso } from './uuid.js';
 import { getCurrentUser } from './session.js';
+import { isSeeding } from './seedContext.js';
 
 /**
  * BaseRepository is the ONLY layer allowed to talk to the DataProvider.
@@ -23,7 +24,7 @@ export class BaseRepository {
           created_by: user ? user.id : null,
           owner_id: user ? user.id : null,
           visibility: 'PRIVATE',
-          source: 'MANUAL',
+          source: isSeeding() ? 'DEMO_SEED' : 'MANUAL',
           external_id: null,
           sync_status: 'LOCAL',
           deleted_at: null,

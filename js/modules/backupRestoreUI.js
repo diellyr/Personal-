@@ -5,6 +5,7 @@ import { readFileAsText } from '../core/importUtils.js';
 import { confirmDialog } from '../ui/components/modal.js';
 import { reportSuccess, reportError } from '../core/errorHandler.js';
 import { isOwner } from '../core/permissions.js';
+import { deleteAllDemoData, reseedDemoData } from '../core/demoDataService.js';
 
 export async function render(container, ctx) {
   const { user } = ctx;
@@ -26,6 +27,48 @@ export async function render(container, ctx) {
   ]));
 
   if (isOwner(user)) {
+    container.appendChild(sectionTitle('🧪 Dados Demo'));
+    const demoStatusHost = h('div', { style: 'margin-top:10px' });
+    container.appendChild(h('div', { class: 'card' }, [
+      h('p', {}, 'Dados fictícios (marcados internamente como DEMO_SEED) usados para explorar o app. Editar um registro demo pelo formulário normal o transforma em dado real — ele deixa de ser afetado por estes botões.'),
+      h('div', { class: 'flex gap-8' }, [
+        h('button', { class: 'btn btn-primary', onClick: async () => {
+          const ok = await confirmDialog({
+            danger: false,
+            message: 'Carregar dados demo? Isso remove qualquer dado demo existente (evitando duplicados) e recria um conjunto completo e consistente de exemplos em todos os módulos. Seus dados reais não são afetados.',
+            confirmLabel: 'Carregar dados demo',
+          });
+          if (!ok) return;
+          clear(demoStatusHost);
+          demoStatusHost.appendChild(h('div', { class: 'muted' }, 'Carregando…'));
+          try {
+            await reseedDemoData();
+            reportSuccess('Dados demo carregados. Recarregando…');
+            setTimeout(() => location.reload(), 1000);
+          } catch (err) {
+            reportError(err, 'demo-data');
+          }
+        } }, '⬇️ Carregar dados demo'),
+        h('button', { class: 'btn btn-danger', onClick: async () => {
+          const ok = await confirmDialog({
+            message: 'Excluir todos os dados demo? Esta ação é permanente (não é soft delete). Seus dados reais (tudo que você criou ou editou manualmente) não são afetados.',
+            confirmLabel: 'Excluir dados demo',
+          });
+          if (!ok) return;
+          clear(demoStatusHost);
+          demoStatusHost.appendChild(h('div', { class: 'muted' }, 'Excluindo…'));
+          try {
+            const count = await deleteAllDemoData();
+            reportSuccess(`${count} registro(s) demo excluído(s). Recarregando…`);
+            setTimeout(() => location.reload(), 1000);
+          } catch (err) {
+            reportError(err, 'demo-data');
+          }
+        } }, '🗑️ Excluir dados demo'),
+      ]),
+      demoStatusHost,
+    ]));
+
     container.appendChild(sectionTitle('⬆️ Restaurar Backup'));
     const fileInput = h('input', { type: 'file', accept: '.json' });
     const modeSelect = h('select', {}, [h('option', { value: 'MERGE' }, 'Merge (mesclar com dados atuais)'), h('option', { value: 'REPLACE' }, 'Replace (substituir tudo)')]);

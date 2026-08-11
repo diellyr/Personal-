@@ -8,10 +8,12 @@ import { renderSidebar } from './ui/layout/sidebar.js';
 import { renderHeader } from './ui/layout/header.js';
 import { initRouter, handleRoute, navigate, currentRoute } from './core/router.js';
 import { onSessionChange } from './core/session.js';
+import { initSidebarToggle } from './ui/layout/sidebarToggle.js';
 
 installGlobalHandlers();
 initToasts();
 initModalRoot();
+initSidebarToggle();
 
 const storedTheme = localStorage.getItem('dielly_os_theme');
 if (storedTheme) document.documentElement.dataset.theme = storedTheme;

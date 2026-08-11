@@ -1,6 +1,8 @@
 import { userRepository } from '../entities/userRepository.js';
 import { createUser } from '../auth.js';
 import { settingsRepository } from '../entities/settingsRepository.js';
+import { setSeeding } from '../seedContext.js';
+import { setCurrentUser, getCurrentUser } from '../session.js';
 
 // Registry of per-module demo-data seeders. Each module file that wants
 // demo data calls `registerSeeder(fn)` at import time; `ensureSeeded()`
@@ -35,21 +37,33 @@ export async function ensureUsers() {
   return usersSeeded;
 }
 
+// Runs every registered seeder once, tagging everything it creates with
+// `source: 'DEMO_SEED'` (via seedContext.js, consulted by BaseRepository /
+// notify() / createTask()) so it can be found and removed later by
+// deleteAllDemoData() in js/core/demoDataService.js.
+export async function runSeedPass(users) {
+  const prevUser = getCurrentUser();
+  setCurrentUser(users.dielly); // seeders write as Dielly (OWNER) by default
+  setSeeding(true);
+  try {
+    for (const seeder of seeders) {
+      try {
+        await seeder(users);
+      } catch (err) {
+        console.error('[seed] failed', err);
+      }
+    }
+  } finally {
+    setSeeding(false);
+    setCurrentUser(prevUser || null);
+  }
+}
+
 export async function ensureSeeded() {
   const users = await ensureUsers();
   const flag = await settingsRepository.get('DEMO_DATA_SEEDED');
   if (flag) return;
-  const { setCurrentUser, getCurrentUser } = await import('../session.js');
-  const prevUser = getCurrentUser();
-  setCurrentUser(users.dielly); // seeders write as Dielly (OWNER) by default
-  for (const seeder of seeders) {
-    try {
-      await seeder(users);
-    } catch (err) {
-      console.error('[seed] failed', err);
-    }
-  }
-  setCurrentUser(prevUser || null);
+  await runSeedPass(users);
   await settingsRepository.set('DEMO_DATA_SEEDED', true);
 }
 

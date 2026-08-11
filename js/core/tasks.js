@@ -1,10 +1,12 @@
 import { taskRepository } from './entities/taskRepository.js';
 import { logAudit } from './audit.js';
+import { isSeeding } from './seedContext.js';
 
 export const TASK_STATUSES = ['TODO', 'IN_PROGRESS', 'WAITING', 'DONE', 'CANCELED'];
 
-export async function createTask({ title, module, priority = 'MEDIUM', status = 'TODO', owner, dueDate = null, source = 'MANUAL', linkedEntity = null }) {
-  const task = await taskRepository.create({ title, module, priority, status, owner, dueDate, source, linkedEntity });
+export async function createTask({ title, module, priority = 'MEDIUM', status = 'TODO', owner, dueDate = null, source, linkedEntity = null }) {
+  const resolvedSource = source || (isSeeding() ? 'DEMO_SEED' : 'MANUAL');
+  const task = await taskRepository.create({ title, module, priority, status, owner, dueDate, source: resolvedSource, linkedEntity });
   await logAudit('CREATE', 'tasks', `Task created: ${title}`, task.id);
   return task;
 }

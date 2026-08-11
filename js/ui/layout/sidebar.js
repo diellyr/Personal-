@@ -3,6 +3,7 @@ import { NAV_GROUPS, MODULES } from '../../core/moduleRegistry.js';
 import { can, isOwner } from '../../core/permissions.js';
 import { currentRoute, navigate } from '../../core/router.js';
 import { isModuleEnabled } from '../../core/moduleManager.js';
+import { closeSidebar } from './sidebarToggle.js';
 
 export async function renderSidebar(container, user) {
   clear(container);
@@ -26,7 +27,7 @@ export async function renderSidebar(container, user) {
     visible.forEach((m) => {
       groupEl.appendChild(h('div', {
         class: `nav-item ${m.key === activeKey ? 'active' : ''}`,
-        onClick: () => navigate(`/${m.key}`),
+        onClick: () => { closeSidebar(); navigate(`/${m.key}`); },
       }, [h('span', { class: 'icon' }, m.icon), h('span', {}, m.label)]));
     });
     nav.appendChild(groupEl);

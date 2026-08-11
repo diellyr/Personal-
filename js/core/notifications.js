@@ -1,6 +1,7 @@
 import { notificationRepository } from './entities/notificationRepository.js';
 import { uuid, nowIso } from './uuid.js';
 import { dataProvider } from './indexedDbProvider.js';
+import { isSeeding } from './seedContext.js';
 
 export const SEVERITY = { INFO: 'INFO', OPPORTUNITY: 'OPPORTUNITY', WARNING: 'WARNING', CRITICAL: 'CRITICAL' };
 
@@ -16,6 +17,7 @@ export async function notify({ userId = 'ALL', module, severity = SEVERITY.INFO,
     status: 'UNREAD',
     createdAt: nowIso(),
     resolvedAt: null,
+    source: isSeeding() ? 'DEMO_SEED' : 'SYSTEM',
   };
   await dataProvider.put('notifications', record);
   return record;

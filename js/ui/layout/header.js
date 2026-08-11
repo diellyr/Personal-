@@ -3,6 +3,7 @@ import { logout } from '../../core/auth.js';
 import { listForUser, unreadCount, markRead, markResolved } from '../../core/notifications.js';
 import { severityBadge } from '../components/misc.js';
 import { navigate } from '../../core/router.js';
+import { toggleSidebar } from './sidebarToggle.js';
 
 let dropdownOpen = false;
 let outsideClickHandler = null;
@@ -15,6 +16,7 @@ export async function renderHeader(container, user, def) {
   // multiple times per click.
   if (outsideClickHandler) document.removeEventListener('click', outsideClickHandler);
 
+  const menuToggle = h('button', { class: 'menu-toggle', title: 'Menu', onClick: (e) => { e.stopPropagation(); toggleSidebar(); } }, '☰');
   const crumbs = h('div', { class: 'breadcrumbs' }, `${def ? def.label : ''}`);
 
   const bell = h('button', { class: 'notif-bell', title: 'Notificações' }, '🔔');
@@ -90,6 +92,6 @@ export async function renderHeader(container, user, def) {
     document.addEventListener('click', () => dd.remove(), { once: true });
   });
 
-  container.appendChild(crumbs);
+  container.appendChild(h('div', { class: 'flex gap-12' }, [menuToggle, crumbs]));
   container.appendChild(h('div', { class: 'header-actions' }, [dropdownHost, themeBtn, userMenu]));
 }
