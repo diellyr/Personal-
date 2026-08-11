@@ -9,11 +9,12 @@ Today/Week/Month views, 3 top priorities, indicators, agenda aggregated from Tas
 Church + Job interviews + Travel, and a live preview of AI Chief of Staff insights.
 
 ## Dashboards (`#/dashboards`)
-Central chart aggregation across modules — Finance, Acompanha+ School, Work, Career,
-English, Life Balance, Jobs, Church — each card reusing that module's own
-Intelligence compute function and gated by the same module permission its full
-screen uses. Links back to each module for the full drill-down.
-`js/modules/dashboardsModule.js`.
+Central chart aggregation across modules — Finance, Acompanha+ School (registros
+per child + a "Notas" card comparing each child's current bimester/semester
+average to the previous one), Work, Career, English, Life Balance, Jobs, Church —
+each card reusing that module's own Intelligence compute function and gated by
+the same module permission its full screen uses. Links back to each module for
+the full drill-down. `js/modules/dashboardsModule.js`.
 
 ## Life
 - **Family** (`#/family`) — Esposo(a)/Casal, Filhos, Compromissos dos filhos,
@@ -22,10 +23,17 @@ screen uses. Links back to each module for the full drill-down.
   family events, Family Load indicator, Acompanha+ integration status.
   `js/modules/familyHub.js`.
 - **Acompanha+ School** (`#/acompanha-plus`) — dedicated home for Acompanha+
-  school-tracking data: an embedded import card (JSON/CSV or demo dataset,
-  reusing Import Center's connector card), a per-child summary (evolution,
-  activities, recommendations, alerts, financeiro escolar), and a full CRUD
-  table. `js/modules/acompanhaPlusModule.js`.
+  school-tracking data: two embedded import cards (JSON/CSV or demo dataset,
+  reusing Import Center's connector cards) — one for Acompanha+ event data,
+  one for a full school-system backup export — a per-child summary
+  (evolution, activities, recommendations, alerts, financeiro escolar), a
+  full CRUD table, and an "Evolução escolar" section per selected child:
+  current-vs-previous bimester and semester comparison (radar chart +
+  grouped bar chart) across competency categories, a separate evolution
+  chart per category across every bimester on record, a combined
+  categories+disciplinas bar chart for the current period, and a Regular/
+  Bom/Ótimo percentage breakdown. `js/modules/acompanhaPlusModule.js`,
+  `js/core/schoolIntelligence.js`, `js/core/connectors/schoolBackupConnector.js`.
 - **Church** (`#/church`) — Funções e Cargos, Pessoas, Agenda, Pregações e Estudos,
   Projetos, Acompanhamento, and Church Intelligence (People Attention Radar,
   Leadership Load, Ministry Health). `js/modules/churchModule.js`,

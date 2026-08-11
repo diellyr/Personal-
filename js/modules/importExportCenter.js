@@ -8,8 +8,9 @@ import { acompanhaPlusConnector } from '../core/connectors/acompanhaPlusConnecto
 import { expansionConnector } from '../core/connectors/expansionConnector.js';
 import { plumaConnector } from '../core/connectors/plumaConnector.js';
 import { jobSourceConnector } from '../core/connectors/jobSourceConnector.js';
+import { schoolBackupConnector } from '../core/connectors/schoolBackupConnector.js';
 
-const CONNECTORS = [acompanhaPlusConnector, expansionConnector, plumaConnector, jobSourceConnector];
+const CONNECTORS = [acompanhaPlusConnector, schoolBackupConnector, expansionConnector, plumaConnector, jobSourceConnector];
 
 // Progress callbacks fire once per record, which for a few thousand records
 // is far more often than the DOM needs to repaint — throttle to keep large

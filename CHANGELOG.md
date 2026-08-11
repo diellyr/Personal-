@@ -8,6 +8,43 @@ All notable changes to this project are documented in this file. Format based on
 
 Nothing yet.
 
+## [1.9.0] — 2026-08-11
+
+### Added
+
+- **School backup import + grade evolution (Acompanha+ School).** New
+  connector `js/core/connectors/schoolBackupConnector.js` consumes a full
+  relational "backup escola" export (`{ generatedAt, tables: { students,
+  assessments, activities, assessmentCategories, grades, assessmentScales,
+  ... } }`) — unlike every other connector, which maps a flat array of
+  rows, this one joins the relevant tables itself (`expand()`), filters out
+  the school platform's own `isDemo` seed students, and normalizes both
+  assessment systems found in these exports (Regular/Bom/Ótimo competency
+  assessments for early-childhood, and numeric/concept subject grades for
+  elementary) onto a comparable 0–10 `scoreValue`. Persisted as a new
+  `family.schoolGrade` entity type.
+- **"Evolução escolar" section** in Acompanha+ School
+  (`js/core/schoolIntelligence.js` + `acompanhaPlusModule.js`), per selected
+  child: current-vs-previous **bimester** comparison and current-vs-previous
+  **semester** comparison, each shown as a multi-series radar chart AND a
+  grouped bar chart; a separate evolution chart per category across every
+  bimester on record; a combined categories+disciplinas bar chart for the
+  current period; and a Regular/Bom/Ótimo percentage breakdown (stat tiles +
+  bar chart).
+- **Dashboards "Notas" card**: one row per child comparing their current
+  bimester and semester average (0–10) to the previous one, with a ▲/▼ delta
+  badge — the compact, at-a-glance version of the full evolution view.
+- New chart primitives in `js/ui/components/chart.js`: `radarChartMulti()`
+  (overlays named series on one radar, e.g. current vs. previous period) and
+  `groupedBarChart()` (clustered bars — one group per category, one bar per
+  series).
+- `connectorCard()`'s existing `onImported` callback (added for Acompanha+
+  School's earlier import card) is now reused by the school-backup card too,
+  so a successful import refreshes the evolution section automatically.
+- Two new in-app Test Runner regression tests: the relational join/filter/
+  score-normalization logic in `extractSchoolBackupRows()`, and the
+  bimester/semester averaging math in `computeSchoolEvolution()`.
+
 ## [1.8.0] — 2026-08-11
 
 ### Added

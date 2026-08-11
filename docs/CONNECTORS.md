@@ -23,10 +23,28 @@ audit logging) so each concrete connector only supplies `id`, `label`, the targe
 | Connector | Target entityType | Feeds | File |
 |---|---|---|---|
 | Acompanha+ | `family.acompanhaEvent` | Family module | `acompanhaPlusConnector.js` |
+| Backup Escola (Acompanha+) | `family.schoolGrade` | Acompanha+ School | `schoolBackupConnector.js` |
 | Portal Expansão | `church.expansionEvent` | Church module | `expansionConnector.js` |
 | Pluma | `finance.transaction` | Finance module | `plumaConnector.js` |
 | Corporate Collector | `work.activity` | Work Intelligence | `corporateCollectorConnector.js` |
 | Job Sources | `jobs.posting` | Job Hunter | `jobSourceConnector.js` |
+
+### Backup Escola — the one connector that doesn't consume flat rows
+
+Every connector above maps a flat array of already-record-shaped rows
+(`raw -> mapRecord(raw) -> entity`). Backup Escola's source is different: a
+full relational export (`{ generatedAt, tables: { students, assessments,
+activities, assessmentCategories, grades, assessmentScales, ... } }`) with
+no top-level array, so the generic JSON parser wraps it as a single-element
+array containing the whole object. `SchoolBackupConnector.expand()` detects
+that shape and calls `extractSchoolBackupRows(tables)`, which joins
+`assessments -> activities -> assessmentCategories` (Regular/Bom/Ótimo
+competency assessments) and `grades -> assessmentScales` (numeric or concept
+subject grades), filters out any student flagged `isDemo` (the school
+platform's own seed data, not this family's), and normalizes both onto a
+comparable 0–10 `scoreValue`. `preview()`/`import()` are overridden to run
+`expand()` first, then delegate to `BaseConnector`, so it plugs into the
+existing per-connector import card with zero UI changes.
 
 Every connector today supports:
 

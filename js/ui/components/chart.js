@@ -92,3 +92,80 @@ export function radarChart(axes, { width = 320, height = 320, color = '#2952e3',
   svg.appendChild(svgEl('polygon', { points, fill: color, 'fill-opacity': 0.22, stroke: color, 'stroke-width': 2 }));
   return svg;
 }
+
+// Same grid/spokes as radarChart, but overlays multiple named series (e.g.
+// "período atual" vs "período anterior") instead of a single filled shape —
+// used to compare two periods on the same axes. `null` values in a series
+// are treated as 0 so a missing category doesn't break the polygon.
+export function radarChartMulti(axisLabels, series, { width = 320, height = 320, max = 10 } = {}) {
+  const svg = svgEl('svg', { viewBox: `0 0 ${width} ${height}`, class: 'svg-chart', width: '100%', height });
+  const cx = width / 2, cy = height / 2, r = Math.min(width, height) / 2 - 34;
+  const n = axisLabels.length;
+  if (n < 3) return svg;
+  const angleFor = (i) => (Math.PI * 2 * i) / n - Math.PI / 2;
+
+  [0.25, 0.5, 0.75, 1].forEach((frac) => {
+    const points = axisLabels.map((_, i) => {
+      const a = angleFor(i);
+      return `${cx + Math.cos(a) * r * frac},${cy + Math.sin(a) * r * frac}`;
+    }).join(' ');
+    svg.appendChild(svgEl('polygon', { points, fill: 'none', stroke: 'currentColor', 'stroke-opacity': 0.12 }));
+  });
+
+  axisLabels.forEach((label, i) => {
+    const a = angleFor(i);
+    const x2 = cx + Math.cos(a) * r, y2 = cy + Math.sin(a) * r;
+    svg.appendChild(svgEl('line', { x1: cx, y1: cy, x2, y2, stroke: 'currentColor', 'stroke-opacity': 0.12 }));
+    const lx = cx + Math.cos(a) * (r + 20), ly = cy + Math.sin(a) * (r + 20);
+    const t = svgEl('text', { x: lx, y: ly, 'text-anchor': 'middle' });
+    t.textContent = label;
+    svg.appendChild(t);
+  });
+
+  series.forEach((s) => {
+    const points = axisLabels.map((_, i) => {
+      const a = angleFor(i);
+      const frac = Math.max(0, Math.min(1, (s.values[i] || 0) / max));
+      return `${cx + Math.cos(a) * r * frac},${cy + Math.sin(a) * r * frac}`;
+    }).join(' ');
+    svg.appendChild(svgEl('polygon', { points, fill: s.color, 'fill-opacity': s.fillOpacity ?? 0.12, stroke: s.color, 'stroke-width': 2, 'stroke-dasharray': s.dashed ? '5,4' : 'none' }));
+  });
+  return svg;
+}
+
+// Clustered bars: one group per category, one thin bar per named series
+// within it (e.g. "atual" vs "anterior") — for comparing two periods
+// side-by-side per category instead of overlaid on a radar.
+export function groupedBarChart(groups, seriesNames, { width = 520, height = 240, colors = [], valueFmt = (v) => v } = {}) {
+  const svg = svgEl('svg', { viewBox: `0 0 ${width} ${height}`, class: 'svg-chart', width: '100%', height });
+  if (!groups.length) return svg;
+  const max = Math.max(1, ...groups.flatMap((g) => g.values.map((v) => v || 0)));
+  const padL = 30, padB = 34, padT = 10, padR = 10;
+  const chartW = width - padL - padR;
+  const chartH = height - padB - padT;
+  const groupW = chartW / groups.length;
+  const barGap = 3;
+  const barW = Math.max(3, (groupW - 12) / seriesNames.length - barGap);
+
+  groups.forEach((g, gi) => {
+    const groupX = padL + gi * groupW + 6;
+    g.values.forEach((v, si) => {
+      if (v === null || v === undefined) return;
+      const barH = (v / max) * chartH;
+      const x = groupX + si * (barW + barGap);
+      const y = padT + (chartH - barH);
+      const rect = svgEl('rect', { x, y, width: barW, height: Math.max(barH, 0), fill: colors[si] || '#2952e3', rx: 2 });
+      svg.appendChild(rect);
+      if (barW > 14) {
+        const t = svgEl('text', { x: x + barW / 2, y: y - 3, 'text-anchor': 'middle', 'font-size': '9' });
+        t.textContent = valueFmt(v);
+        svg.appendChild(t);
+      }
+    });
+    const label = svgEl('text', { x: groupX + (groupW - 12) / 2, y: height - padB + 14, 'text-anchor': 'middle' });
+    label.textContent = g.label.length > 14 ? `${g.label.slice(0, 13)}…` : g.label;
+    svg.appendChild(label);
+  });
+  svg.appendChild(svgEl('line', { x1: padL, y1: padT + chartH, x2: width - padR, y2: padT + chartH, stroke: 'currentColor', 'stroke-opacity': 0.15 }));
+  return svg;
+}

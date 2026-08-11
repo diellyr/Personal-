@@ -9,6 +9,8 @@ import { userRepository } from '../core/entities/userRepository.js';
 import { getCurrentUser, setCurrentUser } from '../core/session.js';
 import { createRole, deleteRole, setRolePermission, listRoles } from '../core/roleService.js';
 import { parseJSON } from '../core/importUtils.js';
+import { extractSchoolBackupRows, schoolBackupConnector } from '../core/connectors/schoolBackupConnector.js';
+import { computeSchoolEvolution } from '../core/schoolIntelligence.js';
 
 export async function render(container, ctx) {
   clear(container);
@@ -138,6 +140,59 @@ async function run(host) {
     const noArrayAtAll = JSON.stringify({ id: 1, name: 'solo record' });
     const solo = parseJSON(noArrayAtAll);
     if (solo.length !== 1 || solo[0].id !== 1) throw new Error('object with no array property should become a single-item list');
+  });
+
+  await test('School Backup: joins relational tables into flat rows, skips isDemo students, computes scoreValue', async () => {
+    const tables = {
+      students: [
+        { id: 'real-1', fullName: 'Aluno Real', isDemo: false },
+        { id: 'seed-1', fullName: 'Aluno Demo da Escola', isDemo: true },
+      ],
+      assessmentCategories: [{ id: 'cat-1', name: 'Autonomia' }],
+      activities: [{ id: 'act-1', categoryId: 'cat-1', period: '2026-b1', date: '2026-03-01' }],
+      assessments: [
+        { id: 'as-1', studentId: 'real-1', activityId: 'act-1', rboLevel: 'O', publishedAt: '2026-03-02' },
+        { id: 'as-2', studentId: 'seed-1', activityId: 'act-1', rboLevel: 'R', publishedAt: '2026-03-02' },
+      ],
+      assessmentScales: [{ id: 'scale-1', levels: [{ code: 'E', order: 1 }, { code: 'A', order: 5 }] }],
+      grades: [
+        { id: 'gr-1', studentId: 'real-1', subject: 'Matemática', period: '2026-B1', scaleId: 'scale-1', scaleLevelCode: 'A' },
+      ],
+    };
+    const rows = extractSchoolBackupRows(tables);
+    if (rows.length !== 2) throw new Error(`expected 2 rows (isDemo student skipped), got ${rows.length}`);
+    if (rows.some((r) => r.childName === 'Aluno Demo da Escola')) throw new Error('isDemo student should have been filtered out');
+
+    const mappedCategory = schoolBackupConnector.mapRecord(rows.find((r) => r.kind === 'CATEGORY'));
+    if (mappedCategory.period !== 'B1' || mappedCategory.year !== 2026 || mappedCategory.semester !== 1) throw new Error(`bad period normalization: ${JSON.stringify(mappedCategory)}`);
+    if (mappedCategory.scoreValue !== 10) throw new Error(`expected RBO 'O' to map to scoreValue 10, got ${mappedCategory.scoreValue}`);
+
+    const mappedSubject = schoolBackupConnector.mapRecord(rows.find((r) => r.kind === 'SUBJECT'));
+    if (mappedSubject.scoreValue !== 10) throw new Error(`expected concept level 'A' (order 5/5) to map to scoreValue 10, got ${mappedSubject.scoreValue}`);
+
+    // A backup file parses (via detectFormatAndParse) into a 1-element array
+    // wrapping the whole { tables } object — expand() must recognize that
+    // shape and join it, not treat it as a single malformed record.
+    const expanded = schoolBackupConnector.expand([{ tables }]);
+    if (expanded.length !== 2) throw new Error('expand() did not recognize the wrapped-backup shape');
+  });
+
+  await test('School Intelligence: bimester/semester comparison averages current vs previous correctly', async () => {
+    const repo = new EntityRepository('family.schoolGrade');
+    const child = `TestChild${Date.now()}`;
+    const rec = (period, year, semester, scoreValue) => repo.create({ childName: child, kind: 'CATEGORY', category: 'Foco', period, year, semester, scoreValue }, { visibility: 'FAMILY' });
+    const created = await Promise.all([
+      rec('B1', 2026, 1, 4), rec('B2', 2026, 1, 6), rec('B3', 2026, 2, 8), rec('B4', 2026, 2, 10),
+    ]);
+    try {
+      const user = getCurrentUser();
+      const ev = await computeSchoolEvolution(user, child);
+      if (ev.bimesterComparison.currentLabel !== '4º bim/2026') throw new Error(`expected current bimester to be the latest, got ${ev.bimesterComparison.currentLabel}`);
+      if (ev.bimesterComparison.categories[0].current !== 10 || ev.bimesterComparison.categories[0].previous !== 8) throw new Error(`bad bimester comparison: ${JSON.stringify(ev.bimesterComparison.categories[0])}`);
+      if (ev.semesterComparison.categories[0].current !== 9 || ev.semesterComparison.categories[0].previous !== 5) throw new Error(`bad semester average (expected (8+10)/2=9 vs (4+6)/2=5): ${JSON.stringify(ev.semesterComparison.categories[0])}`);
+    } finally {
+      await Promise.all(created.map((r) => repo.hardDelete(r.id)));
+    }
   });
 
   await test('Roles: built-in role cannot be deleted', async () => {

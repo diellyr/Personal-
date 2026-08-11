@@ -10,6 +10,7 @@ import { computeChurchIntelligence } from '../core/churchIntelligence.js';
 import { EntityRepository } from '../core/entityRepository.js';
 import { canViewResource, can } from '../core/permissions.js';
 import { navigate } from '../core/router.js';
+import { listSchoolChildren, computeSchoolEvolution, summarizeComparison } from '../core/schoolIntelligence.js';
 
 /**
  * Central Dashboards: one screen that pulls the chart already built for
@@ -40,6 +41,7 @@ export async function render(container, ctx) {
   const cardBuilders = [
     canFinance && financeCard,
     canFamily && acompanhaCard,
+    canFamily && schoolGradesCard,
     canWork && workCard,
     canCareer && careerCard,
     canEnglish && englishCard,
@@ -103,6 +105,38 @@ async function acompanhaCard(user) {
     h('div', { class: 'muted', style: 'margin-top:6px' }, alerts ? `⚠️ ${alerts} alerta(s) ativo(s) entre os filhos acompanhados.` : '✅ Nenhum alerta ativo.'),
   ]);
   return cardShell('🎓 Acompanha+ School — registros por filho(a)', 'acompanha-plus', body, { clickable: true });
+}
+
+function deltaBadge(current, previous) {
+  if (current === null || current === undefined || previous === null || previous === undefined) return badge('—', 'neutral');
+  const diff = current - previous;
+  if (Math.abs(diff) < 0.05) return badge('= sem variação', 'neutral');
+  return badge(`${diff >= 0 ? '▲' : '▼'} ${Math.abs(diff).toFixed(1)}`, diff >= 0 ? 'success' : 'critical');
+}
+
+async function schoolGradesCard(user) {
+  const children = await listSchoolChildren(user);
+  let body;
+  if (!children.length) {
+    body = emptyState({ icon: '📈', title: 'Sem notas importadas ainda' });
+  } else {
+    const rows = await Promise.all(children.map(async (child) => {
+      const ev = await computeSchoolEvolution(user, child);
+      return { child, bimester: summarizeComparison(ev.bimesterComparison), semester: summarizeComparison(ev.semesterComparison) };
+    }));
+    body = h('div', {}, rows.map((r) => h('div', { style: 'padding:8px 0;border-bottom:1px solid var(--border)' }, [
+      h('strong', {}, r.child),
+      h('div', { class: 'flex-between', style: 'font-size:12.5px;margin-top:4px' }, [
+        h('span', {}, `Bimestre (${r.bimester.label || '—'}): ${r.bimester.currentAvg != null ? r.bimester.currentAvg.toFixed(1) : '—'}${r.bimester.previousAvg != null ? ` · anterior: ${r.bimester.previousAvg.toFixed(1)}` : ''}`),
+        deltaBadge(r.bimester.currentAvg, r.bimester.previousAvg),
+      ]),
+      h('div', { class: 'flex-between', style: 'font-size:12.5px;margin-top:2px' }, [
+        h('span', {}, `Semestre (${r.semester.label || '—'}): ${r.semester.currentAvg != null ? r.semester.currentAvg.toFixed(1) : '—'}${r.semester.previousAvg != null ? ` · anterior: ${r.semester.previousAvg.toFixed(1)}` : ''}`),
+        deltaBadge(r.semester.currentAvg, r.semester.previousAvg),
+      ]),
+    ])));
+  }
+  return cardShell('📈 Notas — bimestre e semestre atual vs. anterior', 'acompanha-plus', body, { clickable: true });
 }
 
 async function workCard() {
