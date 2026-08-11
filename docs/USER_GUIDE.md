@@ -167,7 +167,10 @@ específico, em JSON ou CSV.
 - **Audit Log**: histórico de tudo que foi criado/editado/excluído/importado/
   exportado no sistema, com data e responsável.
 - **Data Management**: quantidade de registros por módulo, com opção de limpar um
-  módulo inteiro (com confirmação).
+  módulo inteiro (com confirmação), e um botão **"Apagar dados de todos os
+  módulos"** (só para o Owner) que faz isso de uma vez para todos os módulos —
+  usuários, permissões e configurações não são afetados. Recomendado fazer um
+  backup antes (seção 11) caso queira poder desfazer.
 - **System Health**: status técnico do banco de dados local e erros recentes.
 - **Test Runner**: roda testes automáticos do sistema — útil para confirmar que tudo
   está funcionando após alguma mudança.

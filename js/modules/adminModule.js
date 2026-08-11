@@ -21,6 +21,7 @@ import { jobSourceConnector } from '../core/connectors/jobSourceConnector.js';
 import { storeNames, SCHEMA_VERSION } from '../core/db.js';
 import { dataProvider } from '../core/indexedDbProvider.js';
 import { estimateStorage } from '../core/db.js';
+import { clearAllModulesData } from '../core/dataManagementService.js';
 
 const CONNECTORS = [acompanhaPlusConnector, expansionConnector, plumaConnector, corporateCollectorConnector, jobSourceConnector];
 
@@ -37,7 +38,7 @@ export async function render(container, ctx) {
     { key: 'privacy', label: 'Privacy Manager', render: renderPrivacyManager },
     { key: 'integrations', label: 'Integration Center', render: renderIntegrations },
     { key: 'audit', label: 'Audit Log', render: renderAuditLog },
-    { key: 'data', label: 'Data Management', render: renderDataManagement },
+    { key: 'data', label: 'Data Management', render: (c) => renderDataManagement(c, user) },
     { key: 'health', label: 'System Health', render: renderSystemHealth },
   ];
   container.appendChild(renderTabs(tabs, subview));
@@ -185,8 +186,31 @@ async function renderAuditLog(c) {
 }
 
 // ---- Data Management ----
-async function renderDataManagement(c) {
+async function renderDataManagement(c, currentUser) {
   clear(c);
+
+  if (isOwner(currentUser)) {
+    c.appendChild(sectionTitle('⚠️ Apagar tudo'));
+    c.appendChild(h('div', { class: 'card', style: 'border-color:var(--critical)' }, [
+      h('p', {}, 'Apaga os dados de TODOS os módulos de uma vez (equivalente a clicar "Limpar módulo" em cada linha da tabela abaixo, um por um). Não afeta usuários, permissões, configurações nem o Audit Log. É soft delete — recuperável restaurando um backup, mas os registros somem imediatamente de toda a aplicação.'),
+      h('button', { class: 'btn btn-danger', onClick: async () => {
+        const ok = await confirmDialog({
+          title: 'Apagar dados de todos os módulos',
+          message: 'Tem certeza? Isso apaga TODOS os registros de TODOS os módulos (Família, Igreja, Financeiro, Trabalho, Carreira, Vagas, Inglês, Estudos, CRM, Decisões, Projetos, Tarefas, etc.) — dados reais e demo juntos. Recomendado: exporte um backup antes (Admin → Backup & Restore) caso queira poder desfazer.',
+          confirmLabel: 'Apagar tudo',
+        });
+        if (!ok) return;
+        try {
+          const count = await clearAllModulesData();
+          reportSuccess(`${count} registro(s) apagado(s) em todos os módulos.`);
+          renderDataManagement(c, currentUser);
+        } catch (err) {
+          reportError(err, 'data-management');
+        }
+      } }, '🗑️ Apagar dados de todos os módulos'),
+    ]));
+  }
+
   c.appendChild(sectionTitle('🗃️ Registros por módulo'));
   const rows = [];
   for (const entityType of KNOWN_ENTITY_TYPES) {
@@ -202,7 +226,7 @@ async function renderDataManagement(c) {
       const all = await repo.findAll();
       for (const rec of all) await repo.softDelete(rec.id);
       reportSuccess('Módulo limpo.');
-      renderDataManagement(c);
+      renderDataManagement(c, currentUser);
     } }, 'Limpar módulo'))]))),
   ])) : emptyState({ icon: '🗃️', title: 'Sem dados ainda' }));
 }

@@ -78,7 +78,7 @@ across reload, permission boundaries, backup/restore, import/export).
 | Privacy Manager | YES | YES | reads all modules | Admin | YES | YES | Visibility counts by type |
 | Integration Center | YES | YES | reads connectors_meta | Admin | YES | YES | All 5 connectors |
 | Audit Log | YES | YES | YES | Admin | Generated live | YES | |
-| Data Management | YES | YES | YES | Admin | YES | YES | Per-module counts + clear |
+| Data Management | YES | YES | YES | Admin | YES | YES | Per-module counts + clear, plus Owner-only "apagar tudo" bulk clear |
 | System Health | YES | YES | YES | Admin | YES | YES | Schema version, storage, errors |
 | Test Runner | YES | YES | N/A (self-cleaning) | Admin | N/A | YES | 8 automated checks |
 | Owner: AI Settings | YES | YES | YES (settings) | Owner-only | YES | YES | MockAIProvider active |

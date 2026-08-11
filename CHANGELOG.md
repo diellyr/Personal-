@@ -8,6 +8,22 @@ All notable changes to this project are documented in this file. Format based on
 
 Nothing yet.
 
+## [1.2.0] — 2026-08-11
+
+### Added
+
+- **"Apagar dados de todos os módulos"** (Admin → Data Management, Owner-only):
+  bulk counterpart to the existing per-module "Limpar módulo" button — clears
+  every entity type plus Tasks in one confirmed action, instead of clicking
+  "Limpar módulo" once per module. Soft delete (recoverable via Backup &
+  Restore), audit-logged, and explicitly does **not** touch users, settings,
+  permission overrides, connector status, or the audit log itself.
+  `js/core/dataManagementService.js`.
+  Verified end-to-end that it clears both real and demo records across
+  multiple modules while leaving accounts and system state intact — distinct
+  from "Excluir dados demo" (1.1.0), which only ever removes seeded demo
+  records and leaves real data untouched (also re-verified in this pass).
+
 ## [1.1.0] — 2026-08-11
 
 Follow-up release addressing mobile-testing feedback and two feature gaps.
