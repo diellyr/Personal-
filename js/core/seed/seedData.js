@@ -58,6 +58,7 @@ export async function ensureSeeded() {
 // (no heavy work happens at import time, only function registration).
 export async function loadAllSeeders() {
   const mods = [
+    './globalSeed.js',
     '../../modules/familyModule.js',
     '../../modules/churchModule.js',
     '../../modules/financeModule.js',
