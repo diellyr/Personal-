@@ -1,5 +1,33 @@
 # Architecture
 
+## File layout
+
+```
+index.html              App shell (login screen + sidebar/header/content mount points)
+css/styles.css           Design system (light/dark, responsive)
+js/
+  app.js                 Bootstrap: seeding, session restore, router wiring
+  core/                   Data layer, services, connectors, AI engine (no DOM code)
+    db.js                 IndexedDB schema + low-level CRUD
+    dataProvider.js        DataProvider interface (swap seam for Supabase)
+    indexedDbProvider.js    IndexedDB implementation of DataProvider
+    repository.js           BaseRepository (common fields, soft delete, stamps)
+    entityRepository.js      EntityRepository (polymorphic `records` store scoping)
+    entities/               Dedicated repositories: users, tasks, notifications, audit, settings, connectors
+    auth.js, permissions.js, audit.js, session.js
+    moduleRegistry.js, router.js, moduleManager.js
+    tasks.js, notifications.js, backupService.js, exportImportService.js, importUtils.js
+    ai/                     AIProvider interface, MockAIProvider, Chief of Staff, Cross-Module Insights
+    connectors/              Connector interface + Acompanha+/Expansão/Pluma/Corporate/JobSource connectors
+    seed/                    Demo data seeders (one per module, auto-registered)
+  ui/                      Framework-free DOM helpers + shared components (table, form, modal, kanban, tabs, chart)
+  modules/                 One file per navigable module (UI + local seed data)
+docs/                     Technical docs (this folder) + docs/USER_GUIDE.md
+IMPLEMENTATION_STATUS.md  Module-by-module status table
+FINAL_REPORT.md           Build summary, timestamps, testing notes
+VERSION.md, CHANGELOG.md  Release tracking
+```
+
 ## Layering
 
 Personal+ enforces a strict one-directional dependency chain:
