@@ -8,6 +8,19 @@ All notable changes to this project are documented in this file. Format based on
 
 Nothing yet.
 
+## [1.11.1] — 2026-08-11
+
+### Added
+
+- **Clicking a notification now opens its module.** Previously clicking a
+  notification in the bell dropdown only marked it read. Each notification
+  already carries a `module` field (`js/core/notifications.js`); the
+  dropdown (`js/ui/layout/header.js`) now navigates there after marking it
+  read, via a small `module -> route` map for the few names that don't
+  match a `moduleRegistry` key 1:1 (e.g. `hobbies` -> `hobbies-travel`).
+  Notifications with no navigable module (`auth`, `system`, `general`)
+  still just mark read, same as before.
+
 ## [1.11.0] — 2026-08-11
 
 ### Added

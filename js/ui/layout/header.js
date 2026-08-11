@@ -8,6 +8,21 @@ import { toggleSidebar } from './sidebarToggle.js';
 let dropdownOpen = false;
 let outsideClickHandler = null;
 
+// Most notification `module` values match a moduleRegistry key directly;
+// the handful that don't (or that aren't a navigable module at all, like
+// 'auth'/'system') are mapped here.
+const NOTIFICATION_MODULE_ROUTES = {
+  hobbies: 'hobbies-travel',
+  auth: null,
+  general: null,
+  system: null,
+};
+
+function routeForNotification(n) {
+  if (!n.module) return null;
+  return n.module in NOTIFICATION_MODULE_ROUTES ? NOTIFICATION_MODULE_ROUTES[n.module] : n.module;
+}
+
 export async function renderHeader(container, user, def) {
   clear(container);
   // renderHeader can be called again on every route change; without
@@ -40,9 +55,16 @@ export async function renderHeader(container, user, def) {
           onClick: async () => {
             await markRead(n.id);
             dropdownOpen = false;
-            // Full re-render so the bell's unread badge count updates too,
-            // not just the dropdown contents.
-            await renderHeader(container, user, def);
+            const route = routeForNotification(n);
+            if (route) {
+              // navigate() re-renders the header itself as part of the
+              // route change, so no separate renderHeader() call is needed.
+              navigate(`/${route}`);
+            } else {
+              // Full re-render so the bell's unread badge count updates
+              // too, not just the dropdown contents.
+              await renderHeader(container, user, def);
+            }
           },
         }, [
           h('div', { class: 'flex-between' }, [h('strong', { style: 'font-size:12.5px' }, n.title), severityBadge(n.severity)]),
