@@ -1,6 +1,6 @@
 # Version
 
-**Current version: `1.5.0`** — released 2026-08-11
+**Current version: `1.6.0`** — released 2026-08-11
 
 ## Versioning policy
 
@@ -52,6 +52,7 @@ without the schema version changing, and vice versa. See `docs/DATABASE.md`.
 
 | Version | Date | Highlights |
 |---|---|---|
+| `1.6.0` | 2026-08-11 | Import Center: each connector card (Acompanha+, Portal Expansão, Pluma, Job Sources) now has its own file upload + mapped preview + confirm, not just the demo-dataset button. See `CHANGELOG.md`. |
 | `1.5.0` | 2026-08-11 | Version shown in the UI (login screen + sidebar) and an automatic stale-build warning banner (`version.json` + no-store fetch check). See `CHANGELOG.md`. |
 | `1.4.0` | 2026-08-11 | Custom roles: create new roles in User Management, configure their per-module access in Permission Manager. Role defaults are now data-driven instead of hardcoded. See `CHANGELOG.md`. |
 | `1.3.0` | 2026-08-11 | Global Calendar: real month-grid view with color-coded categories (was list-only). See `CHANGELOG.md`. |

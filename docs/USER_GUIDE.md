@@ -135,12 +135,18 @@ Clique em uma notificação para marcá-la como lida.
 
 **Administração → Import Center**:
 
-- Cada conector (Acompanha+, Portal Expansão, Pluma, Vagas) tem um botão **Importar
-  dataset demo** para testar rapidamente.
-- Para importar seus próprios dados, escolha o tipo de registro, selecione um arquivo
-  `.json` ou `.csv`, clique em **Pré-visualizar** para conferir quantos registros
-  serão importados, e depois **Confirmar importação**. Duplicados são detectados e
-  ignorados automaticamente.
+- Cada conector (Acompanha+, Portal Expansão, Pluma, Vagas) tem seu próprio card com:
+  - **Importar dataset demo** — um clique, dados de exemplo, bom para testar.
+  - **Seu próprio arquivo** — escolha um `.json` ou `.csv` exportado daquele
+    aplicativo, clique em **Pré-visualizar** (o sistema já traduz os campos
+    daquele conector automaticamente e marca o que já existe como duplicado),
+    confira o resumo, e clique em **Confirmar importação**. Duplicados são
+    detectados pelo identificador original do registro e ignorados
+    automaticamente — pode reenviar o mesmo arquivo sem medo de duplicar.
+- Mais abaixo, **"Importar arquivo genérico para um tipo de entidade"** é um caminho
+  à parte: você escolhe manualmente o tipo de registro e o arquivo é importado sem
+  nenhuma tradução de campos — use isso só para dados que não vieram de nenhum dos
+  quatro conectores acima.
 
 ## 10. Exportar dados (Export Center)
 

@@ -58,6 +58,9 @@ function renderImport(c) {
 
 function connectorCard(conn) {
   const statusHost = h('div', {});
+  const fileInput = h('input', { type: 'file', accept: '.json,.csv' });
+  const previewHost = h('div', { style: 'margin-top:10px' });
+
   async function paint() {
     clear(statusHost);
     const status = await conn.getStatus();
@@ -70,8 +73,54 @@ function connectorCard(conn) {
       h('button', { class: 'btn btn-sm', onClick: async () => { await conn.importDemoDataset(); reportSuccess(`${conn.label}: dataset demo importado.`); paint(); } }, 'Importar dataset demo'),
     ]));
   }
+
+  function previewRow(item) {
+    const summary = Object.entries(item.mapped)
+      .filter(([k, v]) => v !== null && v !== undefined && v !== '' && typeof v !== 'object')
+      .slice(0, 4)
+      .map(([k, v]) => `${k}: ${v}`)
+      .join(' · ');
+    return h('div', { class: 'flex-between', style: 'padding:6px 0;border-bottom:1px solid var(--border);font-size:12.5px' }, [
+      h('span', {}, summary || '(sem prévia)'),
+      item.isDuplicate ? badge('Duplicado — será ignorado', 'warning') : badge('Novo', 'success'),
+    ]);
+  }
+
+  async function onPreview() {
+    const file = fileInput.files[0];
+    if (!file) return reportError(new Error('Escolha um arquivo .json ou .csv.'));
+    try {
+      const text = await readFileAsText(file);
+      const rows = detectFormatAndParse(file.name, text);
+      const previewed = await conn.preview(rows);
+      const newCount = previewed.filter((p) => !p.isDuplicate).length;
+      clear(previewHost);
+      previewHost.appendChild(h('p', { class: 'muted' }, `${previewed.length} registro(s) no arquivo · ${newCount} novo(s) · ${previewed.length - newCount} duplicado(s).`));
+      previewHost.appendChild(h('div', {}, previewed.slice(0, 10).map(previewRow)));
+      if (previewed.length > 10) previewHost.appendChild(h('div', { class: 'muted', style: 'padding-top:6px' }, `+ ${previewed.length - 10} outro(s)…`));
+      previewHost.appendChild(h('button', {
+        class: 'btn btn-primary btn-sm', style: 'margin-top:10px',
+        onClick: async () => {
+          const result = await conn.import(rows);
+          reportSuccess(`${conn.label}: ${result.imported} importado(s), ${result.skipped} ignorado(s) (duplicado/erro).`);
+          fileInput.value = '';
+          clear(previewHost);
+          paint();
+        },
+      }, 'Confirmar importação'));
+    } catch (err) {
+      reportError(err, conn.id);
+    }
+  }
+
   paint();
-  return h('div', { class: 'card' }, statusHost);
+  return h('div', { class: 'card' }, [
+    statusHost,
+    h('hr', { class: 'sep' }),
+    h('div', { class: 'form-field' }, [h('label', {}, 'Importar arquivo (.json ou .csv)'), fileInput]),
+    h('button', { class: 'btn btn-sm', onClick: onPreview }, 'Pré-visualizar'),
+    previewHost,
+  ]);
 }
 
 function renderExport(c) {

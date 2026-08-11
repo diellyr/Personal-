@@ -8,6 +8,27 @@ All notable changes to this project are documented in this file. Format based on
 
 Nothing yet.
 
+## [1.6.0] — 2026-08-11
+
+### Added
+
+- **Per-connector file import** (Admin → Import Center): each connector card
+  (Acompanha+, Portal Expansão, Pluma, Job Sources) now has its own file input,
+  "Pré-visualizar" (applies that connector's field mapping via `conn.preview()` and
+  flags duplicates by `external_id`), and "Confirmar importação" — the same pattern
+  Owner → Corporate Collector already used, now applied consistently everywhere a
+  connector exists. Previously these cards only offered the bundled demo dataset;
+  there was no way to import your own real export from Acompanha+/Expansão/Pluma/a
+  job board with the connector's field-name mapping applied (the generic
+  "any entity type" importer further down the page still exists for raw,
+  unmapped imports). `js/modules/importExportCenter.js`.
+
+Verified end-to-end with a real CSV using Pluma's Portuguese column names
+(`descricao`/`valor`/`tipo`): preview correctly mapped fields and showed
+"2 novo(s) · 0 duplicado(s)", confirming the import created correctly-mapped Finance
+transactions; re-uploading the same file correctly showed "0 novo(s) · 2
+duplicado(s)".
+
 ## [1.5.0] — 2026-08-11
 
 ### Added

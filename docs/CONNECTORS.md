@@ -32,8 +32,14 @@ Every connector today supports:
 
 1. **Demo dataset import** — one click, realistic sample data, useful for evaluating
    the app before hooking up a real source.
-2. **File upload** (JSON or CSV) — via Admin → Import Center (generic) or Owner →
-   Corporate Collector (dedicated, sanitized preview).
+2. **File upload with mapped preview** (JSON or CSV) — each connector has its own
+   card in Admin → Import Center with a file input, a "Pré-visualizar" step (applies
+   that connector's `mapRecord()` field mapping and flags duplicates before anything
+   is written), and "Confirmar importação". Owner → Corporate Collector uses the same
+   pattern with an added sanitization step. Import Center's separate "arquivo
+   genérico" section is a distinct, connector-agnostic path: it writes a file's raw
+   columns directly into any chosen entity type with no field mapping — useful for
+   data that didn't come from one of the five connectors.
 3. **Duplicate detection** — `external_id` is derived from the source record's own id
    (or generated) and checked against existing records before insert; duplicates are
    skipped and counted, never overwritten silently.
