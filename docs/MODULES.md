@@ -8,6 +8,12 @@ permission/visibility checks, real demo data. Source of truth for routing is
 Today/Week/Month views, 3 top priorities, indicators, agenda aggregated from Tasks +
 Church + Job interviews + Travel, and a live preview of AI Chief of Staff insights.
 
+## Dashboards (`#/dashboards`)
+Central chart aggregation across modules — Finance, Work, Career, English, Life
+Balance, Jobs, Church — each card reusing that module's own Intelligence compute
+function and gated by the same module permission its full screen uses. Links back
+to each module for the full drill-down. `js/modules/dashboardsModule.js`.
+
 ## Life
 - **Family** (`#/family`) — Esposo(a)/Casal, Filhos, Compromissos dos filhos,
   Pais/Mãe, Casa. `js/modules/familyModule.js`.

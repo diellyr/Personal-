@@ -8,6 +8,42 @@ All notable changes to this project are documented in this file. Format based on
 
 Nothing yet.
 
+## [1.1.0] — 2026-08-11
+
+Follow-up release addressing mobile-testing feedback and two feature gaps.
+
+### Added
+
+- **Central Dashboards module** (`#/dashboards`, `js/modules/dashboardsModule.js`):
+  one screen aggregating charts already computed by each module's own
+  Intelligence layer — Finance (spending by category + 12-month forecast), Work
+  (timesheet by category), Career (evidence scores), English (competency radar),
+  Life Balance (radar), Jobs (pipeline by stage), Church (ministry health). Each
+  card is gated by the same module permission its full screen uses (e.g. the Jobs
+  card is hidden for a user without `jobs` VIEW access), and links back to its
+  module for the full drill-down. `js/core/lifeBalanceIntelligence.js` extracted
+  from `lifeBalanceModule.js` so the radar math is shared instead of duplicated.
+- **Load/Delete demo data** (Admin → Backup & Restore, Owner-only):
+  - "Carregar dados demo" resets demo content to a clean, consistent set (deletes
+    any existing demo data first, then re-runs every module's seeder) —
+    idempotent, safe to click repeatedly.
+  - "Excluir dados demo" permanently removes every record tagged as seeded demo
+    data, leaving real user-entered data untouched.
+  - New `js/core/seedContext.js` flag, consulted by `BaseRepository`,
+    `notifications.js`, and `tasks.js`, auto-tags everything created during a
+    seed pass with `source: 'DEMO_SEED'` — no per-seeder bookkeeping needed.
+    Editing a demo record through its normal form re-stamps it with a real
+    source, so it "graduates" out of demo data automatically.
+  - New `js/core/demoDataService.js` (`deleteAllDemoData()`, `reseedDemoData()`).
+
+### Fixed
+
+- **Mobile: left sidebar didn't collapse.** The sidebar was always full-width
+  with no toggle, unusable on phone-sized viewports. Added a hamburger button in
+  the header (visible under 860px), an off-canvas sliding sidebar with a
+  backdrop, auto-close on navigation, and close-on-backdrop-tap
+  (`js/ui/layout/sidebarToggle.js`, CSS media query in `css/styles.css`).
+
 ## [1.0.0] — 2026-08-11
 
 First complete, functional, persistent release of Personal+ (Dielly OS). Every module

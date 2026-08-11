@@ -14,6 +14,7 @@ export const NAV_GROUPS = [
 
 export const MODULES = [
   { key: 'command-center', label: 'Command Center', group: 'COMMAND', icon: '🏠', permission: 'command_center', loader: () => import('../modules/commandCenter.js') },
+  { key: 'dashboards', label: 'Dashboards', group: 'COMMAND', icon: '📊', permission: 'command_center', loader: () => import('../modules/dashboardsModule.js') },
   { key: 'global-calendar', label: 'Global Calendar', group: 'COMMAND', icon: '📅', permission: 'calendar', loader: () => import('../modules/globalCalendar.js') },
   { key: 'tasks', label: 'Tasks', group: 'COMMAND', icon: '✅', permission: 'tasks', loader: () => import('../modules/taskEngineUI.js') },
   { key: 'search', label: 'Global Search', group: 'COMMAND', icon: '🔎', permission: 'search', loader: () => import('../modules/globalSearch.js') },

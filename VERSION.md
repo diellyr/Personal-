@@ -1,6 +1,6 @@
 # Version
 
-**Current version: `1.0.0`** — released 2026-08-11
+**Current version: `1.1.0`** — released 2026-08-11
 
 ## Versioning policy
 
@@ -28,6 +28,7 @@ without the schema version changing, and vice versa. See `docs/DATABASE.md`.
 
 | Version | Date | Highlights |
 |---|---|---|
+| `1.1.0` | 2026-08-11 | Mobile sidebar (off-canvas menu + hamburger toggle), Load/Delete demo data in Backup & Restore, new central Dashboards module. See `CHANGELOG.md`. |
 | `1.0.0` | 2026-08-11 | First complete, functional, persistent release — every module in the product spec implemented (Command Center through Owner/Admin), 5 connectors, rule-based AI layer, full RBAC + visibility, backup/restore, in-app test suite. See `CHANGELOG.md` for the full list. |
 
 ## What's next (not yet scheduled)

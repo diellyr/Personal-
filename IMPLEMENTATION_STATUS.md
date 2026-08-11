@@ -12,6 +12,7 @@ across reload, permission boundaries, backup/restore, import/export).
 | RBAC + Permission Manager | YES | YES | YES (permissions_overrides) | YES | Role defaults seeded | YES | Live matrix editor |
 | Resource visibility (PRIVATE/FAMILY/CUSTOM) | YES | YES | YES | YES | Mixed demo visibility | YES | Independent axis from module permission |
 | Command Center | YES | YES | reads all modules | YES | YES | YES | Today/Week/Month views |
+| Dashboards (central chart hub) | YES | YES | reads Finance/Work/Career/English/Life Balance/Jobs/Church | YES | YES | YES | Cards gated per-module permission |
 | AI Chief of Staff | YES | YES | reads Tasks/Projects/etc. | YES | YES | YES | Rule-based, AIProvider-ready |
 | Cross-Module Insight Service | YES | YES | pushes to Notifications | YES | YES | YES | 6 cross-module rules |
 | Family (spouse/children/parents/home) | YES | YES | YES | YES | YES | YES | 5 sub-areas |
@@ -70,6 +71,7 @@ across reload, permission boundaries, backup/restore, import/export).
 | Import Center | YES | YES | YES | Admin | YES | YES | JSON/CSV + connectors |
 | Export Center | YES | YES | YES | Admin | YES | YES | JSON/CSV, all or per-module |
 | Backup & Restore | YES | YES | YES | Admin (restore: Owner) | YES | YES | Merge/Replace + validation |
+| Load/Delete demo data | YES | YES | YES | Owner-only | N/A | YES | Idempotent reseed; hard-deletes only DEMO_SEED-tagged records |
 | Backup Reminder | YES | YES | reads settings | Admin | YES | YES | >7 days stale flag |
 | Module Manager | YES | YES | YES (settings) | Admin | YES | YES | Enable/disable per module |
 | Permission Manager | YES | YES | YES | Admin | YES | YES | Live matrix |
