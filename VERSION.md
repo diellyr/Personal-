@@ -1,6 +1,6 @@
 # Version
 
-**Current version: `1.7.0`** — released 2026-08-11
+**Current version: `1.7.1`** — released 2026-08-11
 
 ## Versioning policy
 
@@ -52,6 +52,7 @@ without the schema version changing, and vice versa. See `docs/DATABASE.md`.
 
 | Version | Date | Highlights |
 |---|---|---|
+| `1.7.1` | 2026-08-11 | Finance stat tiles (Dashboard tab, month detail, and the Dashboards module's Finance card) now color-code Receitas (green), Despesas (red), and Saldo (blue if positive, red if negative). See `CHANGELOG.md`. |
 | `1.7.0` | 2026-08-11 | Finance: full-year monthly income/expense chart with click-to-drill-down; Dashboards' Finance card now shows the current month and opens Finance on click. Import Center: preview/confirm buttons show live progress instead of appearing frozen on large files. See `CHANGELOG.md`. |
 | `1.6.1` | 2026-08-11 | Fix: JSON import silently mis-parsed files wrapped in an unrecognized key (e.g. `{ transactions: [...] }`), treating the whole file as one bad record. See `CHANGELOG.md`. |
 | `1.6.0` | 2026-08-11 | Import Center: each connector card (Acompanha+, Portal Expansão, Pluma, Job Sources) now has its own file upload + mapped preview + confirm, not just the demo-dataset button. See `CHANGELOG.md`. |

@@ -231,6 +231,9 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; colo
 .stat-tile { display: flex; flex-direction: column; gap: 4px; }
 .stat-tile .stat-label { font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); }
 .stat-tile .stat-value { font-size: 26px; font-weight: 700; }
+.stat-tile .stat-value-success { color: var(--success); }
+.stat-tile .stat-value-critical { color: var(--critical); }
+.stat-tile .stat-value-info { color: var(--info); }
 .stat-tile .stat-sub { font-size: 12px; color: var(--text-muted); }
 
 .section-title { display: flex; align-items: center; justify-content: space-between; margin: 26px 0 12px; }

@@ -8,6 +8,20 @@ All notable changes to this project are documented in this file. Format based on
 
 Nothing yet.
 
+## [1.7.1] — 2026-08-11
+
+### Changed
+
+- **Color-coded finance stat tiles.** Receitas is now green, Despesas is red,
+  and Saldo is blue when positive / red when negative — applied consistently
+  in the Finance module's Dashboard tab (top summary and the monthly
+  drill-down detail) and the central Dashboards module's Finance card.
+  `statTile()` (`js/ui/components/misc.js`) gained an optional 4th `tone`
+  argument (`'success' | 'critical' | 'info'`) mapped to new
+  `.stat-value-success/-critical/-info` classes in `css/styles.css`, reusing
+  the same success/critical/info palette (and dark-mode variants) already
+  used by badges.
+
 ## [1.7.0] — 2026-08-11
 
 ### Added

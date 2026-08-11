@@ -76,9 +76,9 @@ async function financeCard() {
   const currentMonth = breakdown.months[new Date().getMonth()];
   const body = h('div', {}, [
     h('div', { class: 'grid grid-3', style: 'margin-bottom:10px' }, [
-      statTile('Receitas (mês)', fmtMoney(currentMonth.income)),
-      statTile('Despesas (mês)', fmtMoney(currentMonth.expense)),
-      statTile('Saldo (mês)', fmtMoney(currentMonth.net)),
+      statTile('Receitas (mês)', fmtMoney(currentMonth.income), null, 'success'),
+      statTile('Despesas (mês)', fmtMoney(currentMonth.expense), null, 'critical'),
+      statTile('Saldo (mês)', fmtMoney(currentMonth.net), null, currentMonth.net >= 0 ? 'info' : 'critical'),
     ]),
     spending.categories.length
       ? barChart(spending.categories.slice(0, 6), { height: 140, valueFmt: (v) => fmtMoney(v) })

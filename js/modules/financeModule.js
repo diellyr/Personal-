@@ -29,9 +29,9 @@ export async function render(container, ctx) {
     clear(c);
     const d = await computeFinanceDashboard();
     c.appendChild(h('div', { class: 'grid grid-4' }, [
-      statTile('Receitas', fmtMoney(d.income)),
-      statTile('Despesas', fmtMoney(d.expense)),
-      statTile('Saldo', fmtMoney(d.balance)),
+      statTile('Receitas', fmtMoney(d.income), null, 'success'),
+      statTile('Despesas', fmtMoney(d.expense), null, 'critical'),
+      statTile('Saldo', fmtMoney(d.balance), null, d.balance >= 0 ? 'info' : 'critical'),
       statTile('Patrimônio líquido', fmtMoney(d.netWorth)),
     ]));
     c.appendChild(sectionTitle('🎯 Metas financeiras'));
@@ -55,9 +55,9 @@ export async function render(container, ctx) {
       monthDetailHost.appendChild(h('div', { class: 'card' }, [
         h('div', { class: 'flex-between' }, [h('strong', {}, `${m.label} de ${breakdown.year}`), badge(`${m.transactions.length} transação(ões)`, 'neutral')]),
         h('div', { class: 'grid grid-3', style: 'margin-top:10px' }, [
-          statTile('Receitas', fmtMoney(m.income)),
-          statTile('Despesas', fmtMoney(m.expense)),
-          statTile('Saldo', fmtMoney(m.net)),
+          statTile('Receitas', fmtMoney(m.income), null, 'success'),
+          statTile('Despesas', fmtMoney(m.expense), null, 'critical'),
+          statTile('Saldo', fmtMoney(m.net), null, m.net >= 0 ? 'info' : 'critical'),
         ]),
         sorted.length
           ? h('div', { class: 'table-wrap', style: 'margin-top:10px' }, h('table', { class: 'data-table' }, [

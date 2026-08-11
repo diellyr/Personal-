@@ -18,10 +18,12 @@ export function emptyState({ icon = '📭', title, message, actionLabel, onActio
   ]);
 }
 
-export function statTile(label, value, sub) {
+// tone: 'success' (green), 'critical' (red), 'info' (blue), or omitted for
+// the default text color — used e.g. to color income/expense/balance tiles.
+export function statTile(label, value, sub, tone) {
   return h('div', { class: 'card stat-tile' }, [
     h('div', { class: 'stat-label' }, label),
-    h('div', { class: 'stat-value' }, String(value)),
+    h('div', { class: `stat-value${tone ? ` stat-value-${tone}` : ''}` }, String(value)),
     sub ? h('div', { class: 'stat-sub' }, sub) : null,
   ]);
 }
