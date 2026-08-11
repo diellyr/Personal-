@@ -5,9 +5,16 @@ import { severityBadge } from '../components/misc.js';
 import { navigate } from '../../core/router.js';
 
 let dropdownOpen = false;
+let outsideClickHandler = null;
 
 export async function renderHeader(container, user, def) {
   clear(container);
+  // renderHeader can be called again on every route change; without
+  // removing the previous listener each call would leak another
+  // document-level click handler, eventually firing paintDropdown()
+  // multiple times per click.
+  if (outsideClickHandler) document.removeEventListener('click', outsideClickHandler);
+
   const crumbs = h('div', { class: 'breadcrumbs' }, `${def ? def.label : ''}`);
 
   const bell = h('button', { class: 'notif-bell', title: 'Notificações' }, '🔔');
@@ -28,7 +35,13 @@ export async function renderHeader(container, user, def) {
     const list = notifs.length
       ? notifs.map((n) => h('div', {
           style: 'padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer',
-          onClick: async () => { await markRead(n.id); dropdownOpen = false; await paintDropdown(); if (n.linkedEntity) {} },
+          onClick: async () => {
+            await markRead(n.id);
+            dropdownOpen = false;
+            // Full re-render so the bell's unread badge count updates too,
+            // not just the dropdown contents.
+            await renderHeader(container, user, def);
+          },
         }, [
           h('div', { class: 'flex-between' }, [h('strong', { style: 'font-size:12.5px' }, n.title), severityBadge(n.severity)]),
           h('div', { class: 'muted', style: 'font-size:12px;margin:3px 0' }, n.message),
@@ -45,7 +58,8 @@ export async function renderHeader(container, user, def) {
     ]);
     dropdownHost.appendChild(dd);
   }
-  document.addEventListener('click', () => { if (dropdownOpen) { dropdownOpen = false; paintDropdown(); } }, { once: false });
+  outsideClickHandler = () => { if (dropdownOpen) { dropdownOpen = false; paintDropdown(); } };
+  document.addEventListener('click', outsideClickHandler);
 
   const themeBtn = h('button', { class: 'btn btn-icon', title: 'Alternar tema' }, document.documentElement.dataset.theme === 'dark' ? '☀️' : '🌙');
   themeBtn.addEventListener('click', () => {

@@ -31,6 +31,19 @@ export class EntityRepository extends BaseRepository {
     return super.update(id, { data: mergedData, ...patch });
   }
 
+  // BaseRepository.softDelete()/restore() call `this.update(id, { deleted_at })`,
+  // which here would be (wrongly) interpreted as EntityRepository.update's
+  // `data` argument and merged into record.data instead of the top-level
+  // governance field. Bypass the override so soft delete actually hides
+  // the record (and restore actually un-hides it).
+  async softDelete(id) {
+    return BaseRepository.prototype.update.call(this, id, { deleted_at: new Date().toISOString() });
+  }
+
+  async restore(id) {
+    return BaseRepository.prototype.update.call(this, id, { deleted_at: null });
+  }
+
   async findAll({ includeDeleted = false } = {}) {
     const all = await dataProvider.getAllByIndex('records', 'entityType', this.entityType);
     return includeDeleted ? all : all.filter((r) => !r.deleted_at);

@@ -66,12 +66,12 @@ export async function render(container, ctx) {
       h('button', { class: 'btn', onClick: () => navigate('/admin-integrations') }, 'Gerenciar conector'),
     ]),
   ]));
-  root.appendChild(acompanha.length
-    ? h('div', { class: 'table-wrap', style: 'margin-top:10px' }, h('table', { class: 'data-table' }, [
-        h('thead', {}, h('tr', {}, [h('th', {}, 'Filho(a)'), h('th', {}, 'Categoria'), h('th', {}, 'Evolução'), h('th', {}, 'Alerta')])),
-        h('tbody', {}, acompanha.slice(0, 8).map((a) => h('tr', {}, [h('td', {}, a.data.childName), h('td', {}, a.data.category), h('td', {}, a.data.evolution || '—'), h('td', {}, a.data.alert ? badge(a.data.alert, 'warning') : '—')]))),
-      ]))
-    : null);
+  if (acompanha.length) {
+    root.appendChild(h('div', { class: 'table-wrap', style: 'margin-top:10px' }, h('table', { class: 'data-table' }, [
+      h('thead', {}, h('tr', {}, [h('th', {}, 'Filho(a)'), h('th', {}, 'Categoria'), h('th', {}, 'Evolução'), h('th', {}, 'Alerta')])),
+      h('tbody', {}, acompanha.slice(0, 8).map((a) => h('tr', {}, [h('td', {}, a.data.childName), h('td', {}, a.data.category), h('td', {}, a.data.evolution || '—'), h('td', {}, a.data.alert ? badge(a.data.alert, 'warning') : '—')]))),
+    ])));
+  }
 }
 
 async function familyLoadWidget(familyTasks, home) {

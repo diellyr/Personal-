@@ -42,18 +42,21 @@ async function run(host) {
   });
 
   await test('Visibility: PRIVATE hides record from other users', async () => {
-    const users = await userRepository.findAll();
-    if (users.length < 2) throw new Error('need 2 users to test visibility');
-    const [u1, u2] = users;
+    // Synthetic non-OWNER users so the assertion doesn't depend on which
+    // seeded account happens to be OWNER (OWNER can see everything by
+    // design, which would make this a false failure).
+    const u1 = { id: 'test-user-1', role: 'FAMILY_ADMIN' };
+    const u2 = { id: 'test-user-2', role: 'MEMBER' };
     const record = { owner_id: u1.id, visibility: 'PRIVATE', created_by: u1.id, deleted_at: null };
     if (!canViewResource(u1, record)) throw new Error('owner should see own private record');
     if (canViewResource(u2, record)) throw new Error('other user should NOT see private record');
   });
 
   await test('Visibility: FAMILY is visible to all', async () => {
-    const users = await userRepository.findAll();
-    const record = { owner_id: users[0].id, visibility: 'FAMILY', deleted_at: null };
-    if (!canViewResource(users[1], record)) throw new Error('FAMILY record should be visible to all');
+    const u1 = { id: 'test-user-1', role: 'FAMILY_ADMIN' };
+    const u2 = { id: 'test-user-2', role: 'MEMBER' };
+    const record = { owner_id: u1.id, visibility: 'FAMILY', deleted_at: null };
+    if (!canViewResource(u2, record)) throw new Error('FAMILY record should be visible to all');
   });
 
   await test('Permissions: module permission override applies', async () => {

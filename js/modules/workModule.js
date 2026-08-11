@@ -127,7 +127,7 @@ async function renderTimesheet(c) {
     host.appendChild(sectionTitle('⏱️ Distribuição de tempo por categoria'));
     host.appendChild(t.byCategory.length ? h('div', { class: 'card' }, barChart(t.byCategory, { valueFmt: (v) => `${v}h` })) : emptyState({ icon: '⏱️', title: 'Sem atividades no período' }));
     host.appendChild(sectionTitle('🧩 Por tipo'));
-    host.appendChild(t.byKind.length ? h('div', { class: 'card' }, barChart(t.byKind, { valueFmt: (v) => `${v}h`, color: '#0ea5a5' })) : null);
+    if (t.byKind.length) host.appendChild(h('div', { class: 'card' }, barChart(t.byKind, { valueFmt: (v) => `${v}h`, color: '#0ea5a5' })));
   }
   await paint();
 }

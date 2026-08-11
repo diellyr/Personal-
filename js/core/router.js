@@ -6,6 +6,7 @@ import { isModuleEnabled } from './moduleManager.js';
 
 let contentEl = null;
 let onRouteChange = null;
+let routeGeneration = 0;
 
 export function initRouter(contentElement, callback) {
   contentEl = contentElement;
@@ -30,23 +31,33 @@ export function currentRoute() {
 }
 
 export async function handleRoute() {
+  // Guards against overlapping calls (e.g. a hashchange event firing while
+  // an explicit handleRoute() from boot() is still awaiting) racing to
+  // paint into the same #header/#app-content and duplicating content.
+  const myGeneration = ++routeGeneration;
+  const isStale = () => myGeneration !== routeGeneration;
+
   const user = getCurrentUser();
   if (!user) return;
   const { moduleKey, subview, query } = currentRoute();
   const def = findModule(moduleKey);
   if (!def) {
+    if (isStale()) return;
     contentEl.innerHTML = `<div class="empty-state"><h2>Página não encontrada</h2><p>O módulo "${escapeHtml(moduleKey)}" não existe.</p></div>`;
     return;
   }
   if (def.ownerOnly && !isOwner(user)) {
+    if (isStale()) return;
     contentEl.innerHTML = `<div class="empty-state"><h2>Acesso restrito</h2><p>Este módulo é exclusivo do OWNER.</p></div>`;
     return;
   }
-  if (!def.key.startsWith('admin-') && !def.key.startsWith('owner-') && !(await isModuleEnabled(def.key)) && !isOwner(user)) {
+  if (!def.key.startsWith('admin-') && !def.key.startsWith('owner-') && !(await isModuleEnabled(def.key))) {
+    if (isStale()) return;
     contentEl.innerHTML = `<div class="empty-state"><h2>Módulo desativado</h2><p>Este módulo foi desativado pelo administrador.</p></div>`;
     return;
   }
   const allowed = await can(user, def.permission, 'VIEW');
+  if (isStale()) return;
   if (!allowed) {
     contentEl.innerHTML = `<div class="empty-state"><h2>Sem permissão</h2><p>Você não tem acesso a "${escapeHtml(def.label)}".</p></div>`;
     return;
@@ -54,9 +65,12 @@ export async function handleRoute() {
   try {
     contentEl.innerHTML = '<div class="loading-spinner">Carregando…</div>';
     const mod = await def.loader();
+    if (isStale()) return;
     await mod.render(contentEl, { user, subview: subview || def.view || null, query, moduleDef: def });
-    if (onRouteChange) onRouteChange(def);
+    if (isStale()) return;
+    if (onRouteChange) await onRouteChange(def);
   } catch (err) {
+    if (isStale()) return;
     reportError(err, `router:${moduleKey}`);
     contentEl.innerHTML = `<div class="empty-state"><h2>Erro ao carregar módulo</h2><p>${escapeHtml(err.message)}</p></div>`;
   }

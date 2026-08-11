@@ -40,7 +40,7 @@ async function renderAiSettings(c) {
       await saveAiSettings(values);
       reportSuccess('Configuração de IA salva.');
       renderAiSettings(c);
-    } }, 'Salvar'),
+    } }, 'Salvar')),
     h('p', { class: 'field-hint', style: 'margin-top:10px' }, 'Aviso: o armazenamento local (IndexedDB) não equivale a um cofre de segredos de backend. Chaves reais devem ser configuradas apenas após a migração para Supabase (ver docs/SECURITY.md).'),
   ]));
 }

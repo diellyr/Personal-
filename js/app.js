@@ -80,11 +80,15 @@ async function boot() {
     return;
   }
   await renderShell(user);
-  if (!location.hash) location.hash = '#/command-center';
   initRouter(contentEl, async (def) => {
     await renderSidebar(sidebarEl, user);
     await renderHeader(headerEl, user, def);
   });
+  if (!location.hash) location.hash = '#/command-center';
+  // handleRoute() is idempotent-safe even if the hashchange listener above
+  // also fires for this same navigation (router.js de-dupes via a
+  // generation counter), so calling it explicitly here guarantees the
+  // first paint happens even in browsers/timings where the event doesn't.
   await handleRoute();
 }
 
