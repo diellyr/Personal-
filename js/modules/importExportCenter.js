@@ -5,13 +5,13 @@ import { KNOWN_ENTITY_TYPES, exportEntityType, exportAllModules, importIntoEntit
 import { readFileAsText, detectFormatAndParse } from '../core/importUtils.js';
 import { reportSuccess, reportError } from '../core/errorHandler.js';
 import { acompanhaPlusConnector } from '../core/connectors/acompanhaPlusConnector.js';
-import { expansionConnector } from '../core/connectors/expansionConnector.js';
 import { expansionYouthConnector } from '../core/connectors/expansionYouthConnector.js';
 import { plumaConnector } from '../core/connectors/plumaConnector.js';
 import { jobSourceConnector } from '../core/connectors/jobSourceConnector.js';
 import { schoolBackupConnector } from '../core/connectors/schoolBackupConnector.js';
+import { jiraConnector } from '../core/connectors/jiraConnector.js';
 
-const CONNECTORS = [acompanhaPlusConnector, schoolBackupConnector, expansionConnector, expansionYouthConnector, plumaConnector, jobSourceConnector];
+const CONNECTORS = [acompanhaPlusConnector, schoolBackupConnector, expansionYouthConnector, plumaConnector, jobSourceConnector, jiraConnector];
 
 // Progress callbacks fire once per record, which for a few thousand records
 // is far more often than the DOM needs to repaint — throttle to keep large

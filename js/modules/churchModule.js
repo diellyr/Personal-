@@ -8,7 +8,6 @@ import { computeChurchIntelligence } from '../core/churchIntelligence.js';
 import { computeExpansionIntelligence } from '../core/expansionIntelligence.js';
 import { connectorMetaRepository } from '../core/entities/connectorMetaRepository.js';
 import { navigate } from '../core/router.js';
-import { expansionConnector } from '../core/connectors/expansionConnector.js';
 import { expansionYouthConnector } from '../core/connectors/expansionYouthConnector.js';
 import { readFileAsText, detectFormatAndParse } from '../core/importUtils.js';
 import { reportSuccess, reportError } from '../core/errorHandler.js';
@@ -176,15 +175,6 @@ async function renderExpansionYouth(container, user) {
   });
 }
 
-// Detects, on preview, whether the file is the full Portal Expansão backup
-// ({ data: { youth, cities, congregations, ... } }, wrapped as a 1-element
-// array by the generic JSON parser) or a flat expansion-event export, and
-// routes to the matching connector automatically.
-function detectExpansionConnector(rows) {
-  const isBackup = Array.isArray(rows) && rows.length === 1 && rows[0] && rows[0].data && Array.isArray(rows[0].data.youth);
-  return isBackup ? expansionYouthConnector : expansionConnector;
-}
-
 function smartExpansionImportCard({ onImported }) {
   const statusHost = h('div', {});
   const fileInput = h('input', { type: 'file', accept: '.json,.csv' });
@@ -192,13 +182,13 @@ function smartExpansionImportCard({ onImported }) {
 
   async function paint() {
     clear(statusHost);
-    const [youthStatus, eventStatus] = await Promise.all([expansionYouthConnector.getStatus(), expansionConnector.getStatus()]);
-    const total = (youthStatus.totalRecordsImported || 0) + (eventStatus.totalRecordsImported || 0);
+    const status = await expansionYouthConnector.getStatus();
+    const total = status.totalRecordsImported || 0;
     statusHost.appendChild(h('div', { class: 'flex-between' }, [
       h('strong', {}, t('church.portalExpansao')),
       badge(total ? 'CONNECTED' : 'DISCONNECTED', total ? 'success' : 'neutral'),
     ]));
-    statusHost.appendChild(h('p', { class: 'muted' }, t('church.statusSummary', { n: youthStatus.totalRecordsImported || 0, n2: eventStatus.totalRecordsImported || 0 })));
+    statusHost.appendChild(h('p', { class: 'muted' }, t('church.statusSummary', { n: total })));
     statusHost.appendChild(h('div', { class: 'flex gap-8' }, [
       h('button', { class: 'btn btn-sm', onClick: async () => {
         await expansionYouthConnector.importDemoDataset();
@@ -230,12 +220,10 @@ function smartExpansionImportCard({ onImported }) {
     try {
       const text = await readFileAsText(file);
       const rows = detectFormatAndParse(file.name, text);
-      const connector = detectExpansionConnector(rows);
-      const previewed = await connector.preview(rows);
+      const previewed = await expansionYouthConnector.preview(rows);
       const newCount = previewed.filter((p) => !p.isDuplicate).length;
       clear(previewHost);
-      const kindLabel = connector === expansionYouthConnector ? t('church.kindBackup') : t('church.kindEvents');
-      previewHost.appendChild(h('p', { class: 'muted' }, t('church.formatDetected', { kind: kindLabel, n: previewed.length, new: newCount, dup: previewed.length - newCount })));
+      previewHost.appendChild(h('p', { class: 'muted' }, t('church.formatDetected', { n: previewed.length, new: newCount, dup: previewed.length - newCount })));
       previewHost.appendChild(h('div', {}, previewed.slice(0, 10).map(previewRow)));
       if (previewed.length > 10) previewHost.appendChild(h('div', { class: 'muted', style: 'padding-top:6px' }, t('church.moreOthers', { n: previewed.length - 10 })));
       const confirmBtn = h('button', {
@@ -245,16 +233,16 @@ function smartExpansionImportCard({ onImported }) {
           btn.disabled = true;
           btn.textContent = t('church.importingBtn', { done: 0, total: previewed.length });
           try {
-            const result = await connector.import(rows, {
+            const result = await expansionYouthConnector.import(rows, {
               onProgress: throttleProgress((done, total) => { btn.textContent = t('church.importingBtn', { done, total }); }),
             });
-            reportSuccess(t('church.importSuccessMsg', { label: connector.label, imported: result.imported, skipped: result.skipped }));
+            reportSuccess(t('church.importSuccessMsg', { label: expansionYouthConnector.label, imported: result.imported, skipped: result.skipped }));
             fileInput.value = '';
             clear(previewHost);
             paint();
             if (onImported) await onImported();
           } catch (err) {
-            reportError(err, connector.id);
+            reportError(err, expansionYouthConnector.id);
             btn.disabled = false;
             btn.textContent = t('church.confirmImportBtn');
           }
@@ -262,7 +250,7 @@ function smartExpansionImportCard({ onImported }) {
       }, t('church.confirmImportBtn'));
       previewHost.appendChild(confirmBtn);
     } catch (err) {
-      reportError(err, 'expansion-smart-import');
+      reportError(err, 'expansion-youth-import');
     } finally {
       previewBtn.disabled = false;
       previewBtn.textContent = t('church.previewBtn');

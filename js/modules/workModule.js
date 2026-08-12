@@ -61,6 +61,17 @@ async function renderWeeklyReview(c) {
     statTile('Deep work', `${Math.round(r.deepWorkMinutes / 60 * 10) / 10}h`),
     statTile('Entregas concluídas', r.delivered.length),
   ]));
+  if (r.jiraThisWeek.total > 0) {
+    c.appendChild(sectionTitle('🎫 Jira nesta semana'));
+    c.appendChild(h('div', { class: 'card' }, [
+      h('div', { class: 'grid grid-3' }, [
+        statTile('Tickets tocados', r.jiraThisWeek.total),
+        statTile('Abertos', r.jiraThisWeek.open),
+        statTile('Concluídos', r.jiraThisWeek.done),
+      ]),
+      h('p', { class: 'muted', style: 'margin-top:8px;font-size:12.5px' }, 'O export do Jira não traz tempo logado por ticket, por isso essa contagem fica separada de "Total de horas" — que reflete apenas atividades com duração registrada.'),
+    ]));
+  }
   c.appendChild(sectionTitle('💡 Recomendações da semana'));
   c.appendChild(r.recommendations.length ? h('div', {}, r.recommendations.map((rec) => h('div', { class: 'insight-card WARNING' }, rec))) : emptyState({ icon: '✅', title: 'Semana equilibrada', message: 'Nenhum ponto de atenção identificado.' }));
   c.appendChild(sectionTitle('📦 Principais resultados'));

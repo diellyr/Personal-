@@ -31,6 +31,18 @@ export async function computeWeeklyReview() {
   const meetingMinutes = meetings.reduce((acc, a) => acc + (Number(a.data.durationMinutes) || 0), 0);
   const deepWorkMinutes = deepWork.reduce((acc, a) => acc + (Number(a.data.durationMinutes) || 0), 0);
 
+  // Jira tickets touched this week, tracked separately from totalMinutes —
+  // a Jira CSV export carries no logged-time field, so folding these into
+  // the hours total would silently under-report (every ticket contributes
+  // 0min) without ever explaining why. Surfaced as its own ticket count
+  // instead of a fabricated hour figure.
+  const jiraWeekItems = weekItems.filter((a) => a.data.kind === 'JIRA');
+  const jiraThisWeek = {
+    total: jiraWeekItems.length,
+    open: jiraWeekItems.filter((a) => a.data.status !== 'DONE').length,
+    done: jiraWeekItems.filter((a) => a.data.status === 'DONE').length,
+  };
+
   const recommendations = [];
   if (meetingMinutes > deepWorkMinutes * 2 && meetingMinutes > 300) {
     recommendations.push('Reuniões ocuparam mais que o dobro do tempo de deep work esta semana. Considere bloquear janelas de foco.');
@@ -41,7 +53,7 @@ export async function computeWeeklyReview() {
   if (weekItems.length === 0) {
     recommendations.push('Nenhuma atividade de trabalho registrada esta semana — considere importar do Corporate Collector.');
   }
-  return { weekItems, meetings, deepWork, delivered, totalMinutes, meetingMinutes, deepWorkMinutes, recommendations };
+  return { weekItems, meetings, deepWork, delivered, totalMinutes, meetingMinutes, deepWorkMinutes, jiraThisWeek, recommendations };
 }
 
 export async function computeJiraDashboard() {

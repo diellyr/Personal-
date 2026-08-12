@@ -8,6 +8,40 @@ All notable changes to this project are documented in this file. Format based on
 
 Nothing yet.
 
+## [1.16.0] — 2026-08-12
+
+### Added
+
+- **Dashboards' "Trabalho" card**: filter Jira open/overdue tickets by
+  responsável via a "⚙️ Pessoas" toggle (persisted in localStorage,
+  `dielly_os_dashboard_jira_assignees` — same pattern as the Acompanha+
+  School student selector), plus dedicated "Abertos por responsável" and
+  "Atrasados por responsável" bar charts so it's immediately visible who
+  has what, not just aggregate counts.
+- **Weekly Work Review** now shows a "🎫 Jira nesta semana" section
+  (tickets touched / abertos / concluídos this week), kept deliberately
+  separate from "Total de horas" with an explanatory note — a Jira CSV
+  export carries no logged-time field, so folding ticket counts into the
+  hours total would silently under-report instead of explaining why.
+- **Jira Import** is now also available in the general Import Center
+  (`js/modules/importExportCenter.js`), alongside the dedicated Owner →
+  Jira Import tab.
+
+### Removed
+
+- **The plain "Portal Expansão" connector** (`church.expansionEvent`,
+  flat events/observations export) — investigated and found it has no
+  visualization anywhere in the app; only "Portal Expansão - Jovens"
+  (`church.expansionYouth`, the full census backup) is wired to any
+  screen. Keeping both was exactly the two-similar-imports confusion
+  already fixed once this session for Acompanha+ School, so the dead one
+  is gone rather than kept "just in case": `js/core/connectors/
+  expansionConnector.js` deleted, Church's smart-detect import card
+  simplified to the one real connector, removed from Import Center and
+  the Admin Integration Center status list. `church.expansionEvent`
+  stays in `KNOWN_ENTITY_TYPES` so any stray already-imported records
+  remain visible to generic Data Management/export tools.
+
 ## [1.15.0] — 2026-08-12
 
 ### Added

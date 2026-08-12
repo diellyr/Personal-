@@ -213,20 +213,104 @@ async function acompanhaCard(user) {
   return cardShell(t('dashboards.acompanhaCardTitle'), 'acompanha-plus', wrap, { clickable: false });
 }
 
-async function workCard() {
-  const [timesheet, jira] = await Promise.all([computeTimesheet('MONTH'), computeJiraDashboard()]);
-  const parts = [];
-  if (jira.total) {
-    parts.push(h('div', { class: 'grid grid-3', style: 'margin-bottom:10px' }, [
-      statTile(t('dashboards.jiraTotal'), jira.total),
-      statTile(t('dashboards.jiraOpen'), jira.open.length),
-      statTile(t('dashboards.jiraOverdue'), jira.overdue.length, null, jira.overdue.length ? 'critical' : 'success'),
-    ]));
+const JIRA_DASH_ASSIGNEES_KEY = 'dielly_os_dashboard_jira_assignees';
+const NO_ASSIGNEE = 'Sem responsável';
+
+function getSelectedJiraAssignees() {
+  try {
+    const raw = localStorage.getItem(JIRA_DASH_ASSIGNEES_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
   }
-  parts.push(timesheet.byCategory.length
-    ? barChart(timesheet.byCategory, { height: 160, valueFmt: (v) => `${v}h`, color: '#0ea5a5' })
-    : emptyState({ icon: '💼', title: t('dashboards.noWorkActivities') }));
-  return cardShell(t('dashboards.workCardTitle'), 'work', h('div', {}, parts));
+}
+function setSelectedJiraAssignees(arr) {
+  if (arr === null) localStorage.removeItem(JIRA_DASH_ASSIGNEES_KEY);
+  else localStorage.setItem(JIRA_DASH_ASSIGNEES_KEY, JSON.stringify(arr));
+}
+
+function assigneeOf(ticket) {
+  return ticket.data.assignee || NO_ASSIGNEE;
+}
+
+function groupByAssignee(items) {
+  const map = {};
+  items.forEach((t) => { const k = assigneeOf(t); map[k] = (map[k] || 0) + 1; });
+  return Object.entries(map).map(([label, value]) => ({ label, value })).sort((a, b) => b.value - a.value);
+}
+
+function peopleSettingsPanel(allPeople, selected, onChange) {
+  const activeSet = new Set(selected || allPeople);
+  return h('div', { class: 'card', style: 'margin:6px 0 12px;padding:10px' }, [
+    h('div', { class: 'flex-between', style: 'margin-bottom:6px' }, [
+      h('strong', { style: 'font-size:12px' }, t('dashboards.chooseAssignees')),
+      h('button', { class: 'link-btn', style: 'font-size:12px', onClick: () => onChange(null) }, t('dashboards.selectAll')),
+    ]),
+    h('div', { style: 'display:flex;flex-wrap:wrap;gap:10px' }, allPeople.map((name) => h('label', { style: 'display:flex;align-items:center;gap:4px;font-size:12.5px;cursor:pointer' }, [
+      h('input', {
+        type: 'checkbox', checked: activeSet.has(name) || undefined,
+        onChange: (e) => {
+          const current = selected ? [...selected] : [...allPeople];
+          if (e.target.checked) { if (!current.includes(name)) current.push(name); }
+          else { const idx = current.indexOf(name); if (idx >= 0) current.splice(idx, 1); }
+          onChange(current);
+        },
+      }),
+      name,
+    ]))),
+  ]);
+}
+
+async function workCard() {
+  const wrap = h('div', {});
+  const state = { showSettings: false };
+
+  async function paint() {
+    clear(wrap);
+    const [timesheet, jira] = await Promise.all([computeTimesheet('MONTH'), computeJiraDashboard()]);
+    const parts = [];
+
+    if (jira.total) {
+      const allAssignees = [...new Set(jira.all.map(assigneeOf))].sort();
+      const selected = getSelectedJiraAssignees();
+      const activeSet = new Set(selected || allAssignees);
+
+      const filteredTotal = jira.all.filter((t) => activeSet.has(assigneeOf(t)));
+      const filteredOpen = jira.open.filter((t) => activeSet.has(assigneeOf(t)));
+      const filteredOverdue = jira.overdue.filter((t) => activeSet.has(assigneeOf(t)));
+
+      parts.push(h('div', { class: 'flex-between', style: 'margin-bottom:6px' }, [
+        h('span', { class: 'muted', style: 'font-size:12px' }, t('dashboards.jiraPeopleShown', { n: activeSet.size, total: allAssignees.length })),
+        h('button', { class: 'btn btn-sm', onClick: () => { state.showSettings = !state.showSettings; paint(); } }, t('dashboards.chooseAssigneesBtn')),
+      ]));
+      if (state.showSettings) parts.push(peopleSettingsPanel(allAssignees, selected, (next) => { setSelectedJiraAssignees(next); paint(); }));
+
+      parts.push(h('div', { class: 'grid grid-3', style: 'margin-bottom:10px' }, [
+        statTile(t('dashboards.jiraTotal'), filteredTotal.length),
+        statTile(t('dashboards.jiraOpen'), filteredOpen.length),
+        statTile(t('dashboards.jiraOverdue'), filteredOverdue.length, null, filteredOverdue.length ? 'critical' : 'success'),
+      ]));
+
+      const openByAssignee = groupByAssignee(filteredOpen);
+      parts.push(h('div', { class: 'muted', style: 'font-size:12px;margin-bottom:4px' }, t('dashboards.jiraOpenByAssignee')));
+      parts.push(openByAssignee.length ? barChart(openByAssignee, { height: 120, color: '#2952e3' }) : emptyState({ icon: '🎫', title: t('dashboards.jiraNoneOpen') }));
+
+      const overdueByAssignee = groupByAssignee(filteredOverdue);
+      if (overdueByAssignee.length) {
+        parts.push(h('div', { class: 'muted', style: 'font-size:12px;margin:10px 0 4px' }, t('dashboards.jiraOverdueByAssignee')));
+        parts.push(barChart(overdueByAssignee, { height: 120, color: '#c2273d' }));
+      }
+    }
+
+    parts.push(timesheet.byCategory.length
+      ? barChart(timesheet.byCategory, { height: 160, valueFmt: (v) => `${v}h`, color: '#0ea5a5' })
+      : emptyState({ icon: '💼', title: t('dashboards.noWorkActivities') }));
+
+    wrap.appendChild(h('div', {}, parts));
+  }
+
+  await paint();
+  return cardShell(t('dashboards.workCardTitle'), 'work', wrap, { clickable: false });
 }
 
 async function careerCard() {
