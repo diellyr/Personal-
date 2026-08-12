@@ -8,6 +8,7 @@ import { openModal, closeModal, confirmDialog } from '../ui/components/modal.js'
 import { emptyState, sectionTitle, badge, demoTag } from '../ui/components/misc.js';
 import { logAudit } from './audit.js';
 import { reportSuccess, reportError } from './errorHandler.js';
+import { t } from './i18n.js';
 
 /**
  * Config-driven CRUD (+ optional Kanban) engine shared by most domain
@@ -40,7 +41,7 @@ export async function renderEntityCrud(container, opts) {
 
   const wrap = h('div', {});
   const toolbar = h('div', { class: 'filters-bar' });
-  const searchInput = h('input', { type: 'text', placeholder: 'Buscar…', style: 'min-width:200px' });
+  const searchInput = h('input', { type: 'text', placeholder: t('crud.search'), style: 'min-width:200px' });
   searchInput.addEventListener('input', () => { state.search = searchInput.value.toLowerCase(); paint(); });
   toolbar.appendChild(searchInput);
 
@@ -51,7 +52,7 @@ export async function renderEntityCrud(container, opts) {
   });
   if (extraToolbar) toolbar.appendChild(extraToolbar);
   if (canCreate) {
-    toolbar.appendChild(h('button', { class: 'btn btn-primary', style: 'margin-left:auto', onClick: () => openEditor(null) }, `+ Novo`));
+    toolbar.appendChild(h('button', { class: 'btn btn-primary', style: 'margin-left:auto', onClick: () => openEditor(null) }, t('crud.new')));
   }
 
   const listHost = h('div', {});
@@ -82,7 +83,7 @@ export async function renderEntityCrud(container, opts) {
 
     if (kanban) {
       if (rows.length === 0) {
-        listHost.appendChild(emptyState({ icon: '🗂️', title: emptyTitle || 'Nada por aqui ainda', message: emptyMessage, actionLabel: canCreate ? '+ Criar primeiro registro' : null, onAction: () => openEditor(null) }));
+        listHost.appendChild(emptyState({ icon: '🗂️', title: emptyTitle || t('crud.nothingYet'), message: emptyMessage, actionLabel: canCreate ? t('crud.createFirst') : null, onAction: () => openEditor(null) }));
         return;
       }
       const board = renderKanban({
@@ -97,7 +98,7 @@ export async function renderEntityCrud(container, opts) {
           return card;
         },
         onDrop: async (row, newStatus) => {
-          if (!canEdit) return reportError(new Error('Sem permissão para mover.'));
+          if (!canEdit) return reportError(new Error(t('crud.noPermissionMove')));
           await repo.update(row.id, { [kanban.statusKey || 'status']: newStatus });
           await logAudit('UPDATE', entityType, `Status -> ${newStatus}`, row.id);
           paint();
@@ -109,22 +110,22 @@ export async function renderEntityCrud(container, opts) {
     }
 
     listHost.appendChild(renderTable(columns, rows, {
-      emptyTitle: emptyTitle || 'Nenhum registro ainda',
+      emptyTitle: emptyTitle || t('crud.noRecordsYet'),
       emptyMessage,
-      emptyAction: canCreate ? h('button', { class: 'btn btn-primary', onClick: () => openEditor(null) }, '+ Criar primeiro registro') : null,
+      emptyAction: canCreate ? h('button', { class: 'btn btn-primary', onClick: () => openEditor(null) }, t('crud.createFirst')) : null,
       onRowClick: (row) => openEditor(row),
       actions: (row) => h('div', { class: 'flex gap-8' }, [
-        canDelete ? h('button', { class: 'btn btn-sm btn-danger', onClick: async (e) => { e.stopPropagation(); await removeRow(row); } }, 'Excluir') : null,
+        canDelete ? h('button', { class: 'btn btn-sm btn-danger', onClick: async (e) => { e.stopPropagation(); await removeRow(row); } }, t('crud.delete')) : null,
       ]),
     }));
   }
 
   async function removeRow(row) {
-    const ok = await confirmDialog({ message: `Excluir "${(columns[0] && (row[columns[0].key] || '')) || row.id}"? Esta ação pode ser desfeita pelo Admin (soft delete).` });
+    const ok = await confirmDialog({ message: t('crud.deleteConfirm', { name: (columns[0] && (row[columns[0].key] || '')) || row.id }) });
     if (!ok) return;
     await repo.softDelete(row.id);
     await logAudit('DELETE', entityType, 'Record soft-deleted', row.id);
-    reportSuccess('Registro excluído.');
+    reportSuccess(t('crud.deleted'));
     paint();
     if (onAfterChange) onAfterChange();
   }
@@ -136,8 +137,8 @@ export async function renderEntityCrud(container, opts) {
     const formFields = [...fields];
     if (opts.visibilityEnabled !== false) {
       formFields.push({
-        key: 'visibility', label: 'Visibilidade', type: 'select', full: true,
-        options: [{ value: VISIBILITY.PRIVATE, label: 'Privado (só eu)' }, { value: VISIBILITY.FAMILY, label: 'Família' }],
+        key: 'visibility', label: t('crud.visibility'), type: 'select', full: true,
+        options: [{ value: VISIBILITY.PRIVATE, label: t('crud.private') }, { value: VISIBILITY.FAMILY, label: t('crud.family') }],
         default: row ? row.visibility : defaultVisibility,
       });
     }
@@ -145,7 +146,7 @@ export async function renderEntityCrud(container, opts) {
     const body = h('div', {}, [
       node,
       h('div', { class: 'form-actions' }, [
-        h('button', { class: 'btn', onClick: closeModal }, 'Cancelar'),
+        h('button', { class: 'btn', onClick: closeModal }, t('crud.cancel')),
         h('button', { class: 'btn btn-primary', onClick: async () => {
           const errors = validate();
           if (errors.length) return reportError(new Error(errors.join(' ')));
@@ -155,11 +156,11 @@ export async function renderEntityCrud(container, opts) {
             if (isNew) {
               const rec = await repo.create(data, { visibility: visibility || defaultVisibility });
               await logAudit('CREATE', entityType, `Created ${title}`, rec.id);
-              reportSuccess('Criado com sucesso.');
+              reportSuccess(t('crud.createdSuccess'));
             } else {
               await repo.update(row.id, data, { visibility: visibility || row.visibility });
               await logAudit('UPDATE', entityType, `Updated ${title}`, row.id);
-              reportSuccess('Atualizado com sucesso.');
+              reportSuccess(t('crud.updatedSuccess'));
             }
             closeModal();
             paint();
@@ -167,10 +168,10 @@ export async function renderEntityCrud(container, opts) {
           } catch (err) {
             reportError(err, entityType);
           }
-        } }, isNew ? 'Criar' : 'Salvar'),
+        } }, isNew ? t('crud.create') : t('crud.save')),
       ]),
     ]);
-    openModal({ title: isNew ? `Novo — ${title}` : `Editar — ${title}`, bodyNode: body, width: 620 });
+    openModal({ title: isNew ? t('crud.newTitle', { title }) : t('crud.editTitle', { title }), bodyNode: body, width: 620 });
   }
 
   await paint();

@@ -1,4 +1,5 @@
 import { h, clear } from '../dom.js';
+import { t } from '../../core/i18n.js';
 
 let root = null;
 
@@ -24,15 +25,15 @@ export function openModal({ title, bodyNode, width = 560 }) {
   return { close: closeModal };
 }
 
-export function confirmDialog({ title = 'Confirmar ação', message, danger = true, confirmLabel = 'Confirmar' }) {
+export function confirmDialog({ title, message, danger = true, confirmLabel }) {
   return new Promise((resolve) => {
     const body = h('div', {}, [
       h('p', {}, message),
       h('div', { class: 'form-actions' }, [
-        h('button', { class: 'btn', onClick: () => { closeModal(); resolve(false); } }, 'Cancelar'),
-        h('button', { class: danger ? 'btn btn-danger' : 'btn btn-primary', onClick: () => { closeModal(); resolve(true); } }, confirmLabel),
+        h('button', { class: 'btn', onClick: () => { closeModal(); resolve(false); } }, t('crud.cancel')),
+        h('button', { class: danger ? 'btn btn-danger' : 'btn btn-primary', onClick: () => { closeModal(); resolve(true); } }, confirmLabel || t('modal.confirm')),
       ]),
     ]);
-    openModal({ title, bodyNode: body, width: 440 });
+    openModal({ title: title || t('modal.confirmTitle'), bodyNode: body, width: 440 });
   });
 }

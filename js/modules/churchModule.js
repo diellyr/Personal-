@@ -13,79 +13,80 @@ import { expansionYouthConnector } from '../core/connectors/expansionYouthConnec
 import { readFileAsText, detectFormatAndParse } from '../core/importUtils.js';
 import { reportSuccess, reportError } from '../core/errorHandler.js';
 import { throttleProgress } from './importExportCenter.js';
+import { t } from '../core/i18n.js';
 
 export async function render(container, ctx) {
   const { user, subview } = ctx;
   clear(container);
-  container.appendChild(h('h1', {}, '⛪ Igreja'));
-  container.appendChild(h('p', {}, 'Módulo genérico — não amarrado a um cargo específico. Funções, pessoas, agenda, pregações, projetos e acompanhamento.'));
+  container.appendChild(h('h1', {}, t('church.title')));
+  container.appendChild(h('p', {}, t('church.subtitle')));
 
   const tabs = [
-    { key: 'intelligence', label: 'Church Intelligence', render: renderIntelligence },
-    { key: 'roles', label: 'Funções e Cargos', render: (c) => renderEntityCrud(c, rolesConfig(user)) },
-    { key: 'people', label: 'Pessoas', render: (c) => renderEntityCrud(c, peopleConfig(user)) },
-    { key: 'agenda', label: 'Agenda', render: (c) => renderEntityCrud(c, agendaConfig(user)) },
-    { key: 'sermons', label: 'Pregações e Estudos', render: (c) => renderEntityCrud(c, sermonsConfig(user)) },
-    { key: 'projects', label: 'Projetos', render: (c) => renderEntityCrud(c, projectsConfig(user)) },
-    { key: 'followup', label: 'Acompanhamento', render: (c) => renderEntityCrud(c, followupConfig(user)) },
-    { key: 'expansion-youth', label: 'Jovens (Expansão)', render: (c) => renderExpansionYouth(c, user) },
+    { key: 'intelligence', label: t('church.tabIntelligence'), render: renderIntelligence },
+    { key: 'roles', label: t('church.tabRoles'), render: (c) => renderEntityCrud(c, rolesConfig(user)) },
+    { key: 'people', label: t('church.tabPeople'), render: (c) => renderEntityCrud(c, peopleConfig(user)) },
+    { key: 'agenda', label: t('church.tabAgenda'), render: (c) => renderEntityCrud(c, agendaConfig(user)) },
+    { key: 'sermons', label: t('church.tabSermons'), render: (c) => renderEntityCrud(c, sermonsConfig(user)) },
+    { key: 'projects', label: t('church.tabProjects'), render: (c) => renderEntityCrud(c, projectsConfig(user)) },
+    { key: 'followup', label: t('church.tabFollowup'), render: (c) => renderEntityCrud(c, followupConfig(user)) },
+    { key: 'expansion-youth', label: t('church.tabExpansionYouth'), render: (c) => renderExpansionYouth(c, user) },
   ];
   container.appendChild(renderTabs(tabs, subview));
 }
 
 async function renderIntelligence(container) {
   clear(container);
-  container.appendChild(h('div', { class: 'loading-spinner' }, 'Calculando indicadores…'));
+  container.appendChild(h('div', { class: 'loading-spinner' }, t('church.loadingIndicators')));
   const [intel, connMeta] = await Promise.all([computeChurchIntelligence(), connectorMetaRepository.get('expansion')]);
   clear(container);
   container.appendChild(h('div', { class: 'grid grid-4' }, [
-    statTile('Pessoas cadastradas', intel.ministryHealth.totalPeople),
-    statTile('Projetos ativos', intel.ministryHealth.activeProjects, intel.ministryHealth.stalledProjects ? `${intel.ministryHealth.stalledProjects} parados` : 'em dia'),
-    statTile('Eventos (14 dias)', intel.ministryHealth.upcomingEvents),
-    statTile('Radar de atenção', intel.peopleAttentionRadar.length, 'pessoas'),
+    statTile(t('church.statPeopleRegistered'), intel.ministryHealth.totalPeople),
+    statTile(t('church.statActiveProjects'), intel.ministryHealth.activeProjects, intel.ministryHealth.stalledProjects ? t('church.statStalledProjects', { n: intel.ministryHealth.stalledProjects }) : t('church.statUpToDate')),
+    statTile(t('church.statEventsSoon'), intel.ministryHealth.upcomingEvents),
+    statTile(t('church.statAttentionRadar'), intel.peopleAttentionRadar.length, t('church.statPeopleSuffix')),
   ]));
 
-  container.appendChild(sectionTitle('🚨 People Attention Radar'));
+  container.appendChild(sectionTitle(t('church.radarTitle')));
   container.appendChild(intel.peopleAttentionRadar.length
     ? h('div', {}, intel.peopleAttentionRadar.map((name) => h('div', { class: 'insight-card WARNING' }, [
         h('div', { class: 'insight-title' }, name),
-        h('div', { class: 'muted' }, 'Acompanhamento atrasado ou sem atualização há mais de 21 dias.'),
+        h('div', { class: 'muted' }, t('church.radarItemDesc')),
       ])))
-    : emptyState({ icon: '✅', title: 'Sem alertas de acompanhamento', message: 'Todos os acompanhamentos estão em dia.' }));
+    : emptyState({ icon: '✅', title: t('church.radarEmptyTitle'), message: t('church.radarEmptyMsg') }));
 
-  container.appendChild(sectionTitle('👥 Leadership Load'));
+  container.appendChild(sectionTitle(t('church.leadershipTitle')));
   container.appendChild(intel.leadershipLoad.length
     ? h('div', { class: 'table-wrap' }, h('table', { class: 'data-table' }, [
-        h('thead', {}, h('tr', {}, [h('th', {}, 'Pessoa'), h('th', {}, 'Cargos ativos')])),
+        h('thead', {}, h('tr', {}, [h('th', {}, t('church.colPerson')), h('th', {}, t('church.colActiveRoles'))])),
         h('tbody', {}, intel.leadershipLoad.map((l) => h('tr', {}, [h('td', {}, l.name), h('td', {}, l.count)]))),
       ]))
-    : emptyState({ icon: '👤', title: 'Nenhum cargo ativo registrado' }));
+    : emptyState({ icon: '👤', title: t('church.leadershipEmpty') }));
 
-  container.appendChild(sectionTitle('🌍 Portal Expansão (integração)'));
+  container.appendChild(sectionTitle(t('church.expansionTitle')));
   container.appendChild(h('div', { class: 'card' }, [
     h('div', { class: 'flex-between' }, [
       h('div', {}, [
-        h('strong', {}, connMeta ? `Status: ${connMeta.status}` : 'Ainda não conectado'),
-        h('p', {}, connMeta ? `${connMeta.totalRecordsImported || 0} registro(s) importado(s)` : 'Importe dados do Portal Expansão (JSON/CSV) na aba "Jovens (Expansão)".'),
+        h('strong', {}, connMeta ? t('church.expansionStatus', { status: connMeta.status }) : t('church.expansionNotConnected')),
+        h('p', {}, connMeta ? t('church.expansionImportedCount', { n: connMeta.totalRecordsImported || 0 }) : t('church.expansionImportHint')),
       ]),
-      h('button', { class: 'btn', onClick: () => navigate('/church/expansion-youth') }, 'Abrir Jovens (Expansão) →'),
+      h('button', { class: 'btn', onClick: () => navigate('/church/expansion-youth') }, t('church.expansionOpenBtn')),
     ]),
   ]));
 }
 
 async function renderExpansionYouth(container, user) {
   clear(container);
-  container.appendChild(h('p', {}, 'Censo do ministério de jovens do Portal Expansão — importe o backup completo (cidades, congregações e jovens) para ver a distribuição, cobertura de batismo e aniversariantes.'));
+  container.appendChild(h('p', {}, t('church.expYouthIntro')));
 
   const dashHost = h('div', {});
   let crudHandle = null;
 
-  container.appendChild(sectionTitle('🔌 Importar dados'));
+  container.appendChild(sectionTitle(t('church.importSectionTitle')));
   container.appendChild(smartExpansionImportCard({
     onImported: async () => { await paintDash(); if (crudHandle) crudHandle.repaint(); },
   }));
 
-  container.appendChild(sectionTitle('📊 Painel — jovens ativos'));
+  container.appendChild(sectionTitle(t('church.dashSectionTitle')));
   container.appendChild(dashHost);
 
   const crudHost = h('div', { style: 'margin-top:26px' });
@@ -96,81 +97,81 @@ async function renderExpansionYouth(container, user) {
     try {
       const intel = await computeExpansionIntelligence(user);
       if (!intel.hasData) {
-        dashHost.appendChild(emptyState({ icon: '🌍', title: 'Nenhum jovem importado ainda', message: 'Importe o backup do Portal Expansão acima, ou use o dataset demo.' }));
+        dashHost.appendChild(emptyState({ icon: '🌍', title: t('church.emptyNoYouth'), message: t('church.emptyNoYouthMsg') }));
         return;
       }
 
       dashHost.appendChild(h('div', { class: 'grid grid-4' }, [
-        statTile('Jovens ativos', intel.total),
-        statTile('Líderes', intel.leaders, `${intel.total ? Math.round((intel.leaders / intel.total) * 100) : 0}%`),
-        statTile('Batizados em água', `${intel.waterBaptism.pct}%`, `${intel.waterBaptism.count}/${intel.total}`, intel.waterBaptism.pct >= 70 ? 'success' : intel.waterBaptism.pct >= 40 ? 'info' : 'critical'),
-        statTile('Batizados no Espírito', `${intel.holySpiritBaptism.pct}%`, `${intel.holySpiritBaptism.count}/${intel.total}`, intel.holySpiritBaptism.pct >= 70 ? 'success' : intel.holySpiritBaptism.pct >= 40 ? 'info' : 'critical'),
+        statTile(t('church.statActiveYouth'), intel.total),
+        statTile(t('church.statLeaders'), intel.leaders, `${intel.total ? Math.round((intel.leaders / intel.total) * 100) : 0}%`),
+        statTile(t('church.statWaterBaptism'), `${intel.waterBaptism.pct}%`, `${intel.waterBaptism.count}/${intel.total}`, intel.waterBaptism.pct >= 70 ? 'success' : intel.waterBaptism.pct >= 40 ? 'info' : 'critical'),
+        statTile(t('church.statHolySpiritBaptism'), `${intel.holySpiritBaptism.pct}%`, `${intel.holySpiritBaptism.count}/${intel.total}`, intel.holySpiritBaptism.pct >= 70 ? 'success' : intel.holySpiritBaptism.pct >= 40 ? 'info' : 'critical'),
       ]));
 
-      dashHost.appendChild(sectionTitle('🎂 Aniversariantes (próximos 30 dias)'));
+      dashHost.appendChild(sectionTitle(t('church.birthdaysTitle')));
       dashHost.appendChild(intel.upcomingBirthdays.length
         ? h('div', { class: 'table-wrap' }, h('table', { class: 'data-table' }, [
-          h('thead', {}, h('tr', {}, [h('th', {}, 'Nome'), h('th', {}, 'Data'), h('th', {}, 'Faz anos em'), h('th', {}, 'Idade')])),
+          h('thead', {}, h('tr', {}, [h('th', {}, t('church.fieldName')), h('th', {}, t('church.fieldDate')), h('th', {}, t('church.colBirthdayIn')), h('th', {}, t('church.colAge'))])),
           h('tbody', {}, intel.upcomingBirthdays.slice(0, 20).map((b) => h('tr', {}, [
             h('td', {}, b.name), h('td', {}, fmtDate(b.birthDate)),
-            h('td', {}, b.daysUntil === 0 ? badge('Hoje!', 'warning') : `${b.daysUntil} dia(s)`),
-            h('td', {}, `${b.age + (b.daysUntil === 0 ? 0 : 1)} anos`),
+            h('td', {}, b.daysUntil === 0 ? badge(t('church.today'), 'warning') : t('church.daysCount', { n: b.daysUntil })),
+            h('td', {}, t('church.ageYears', { n: b.age + (b.daysUntil === 0 ? 0 : 1) })),
           ]))),
         ]))
-        : emptyState({ icon: '🎂', title: 'Nenhum aniversário nos próximos 30 dias' }));
+        : emptyState({ icon: '🎂', title: t('church.noBirthdays') }));
 
-      dashHost.appendChild(sectionTitle('💧 Sem batismo em água — oportunidade de acompanhamento'));
+      dashHost.appendChild(sectionTitle(t('church.noWaterBaptismTitle')));
       dashHost.appendChild(intel.notBaptizedInWater.length
         ? h('div', {}, [
-          h('p', { class: 'muted' }, `${intel.notBaptizedInWater.length} jovem(ns) ainda não tem batismo em água registrado.`),
+          h('p', { class: 'muted' }, t('church.noWaterBaptismCount', { n: intel.notBaptizedInWater.length })),
           h('div', { class: 'table-wrap' }, h('table', { class: 'data-table' }, [
-            h('thead', {}, h('tr', {}, [h('th', {}, 'Nome'), h('th', {}, 'Cidade'), h('th', {}, 'Congregação')])),
+            h('thead', {}, h('tr', {}, [h('th', {}, t('church.fieldName')), h('th', {}, t('church.colCity')), h('th', {}, t('church.colCongregation'))])),
             h('tbody', {}, intel.notBaptizedInWater.slice(0, 25).map((p) => h('tr', {}, [h('td', {}, p.name), h('td', {}, p.city || '—'), h('td', {}, p.congregation || '—')]))),
           ])),
-          intel.notBaptizedInWater.length > 25 ? h('div', { class: 'muted', style: 'padding-top:6px' }, `+ ${intel.notBaptizedInWater.length - 25} outro(s)…`) : null,
+          intel.notBaptizedInWater.length > 25 ? h('div', { class: 'muted', style: 'padding-top:6px' }, t('church.moreOthers', { n: intel.notBaptizedInWater.length - 25 })) : null,
         ])
-        : emptyState({ icon: '✅', title: 'Todos os jovens ativos têm batismo em água registrado' }));
+        : emptyState({ icon: '✅', title: t('church.allBaptized') }));
 
-      dashHost.appendChild(sectionTitle('📍 Distribuição'));
+      dashHost.appendChild(sectionTitle(t('church.distributionTitle')));
       dashHost.appendChild(h('div', { class: 'grid grid-2' }, [
-        h('div', { class: 'card' }, [h('strong', {}, 'Por cidade'), barChart(intel.byCity, { height: 150 })]),
-        h('div', { class: 'card' }, [h('strong', {}, 'Por congregação'), barChart(intel.byCongregation, { height: 150, color: '#0ea5a5' })]),
+        h('div', { class: 'card' }, [h('strong', {}, t('church.byCity')), barChart(intel.byCity, { height: 150 })]),
+        h('div', { class: 'card' }, [h('strong', {}, t('church.byCongregation')), barChart(intel.byCongregation, { height: 150, color: '#0ea5a5' })]),
       ]));
       dashHost.appendChild(h('div', { class: 'grid grid-2', style: 'margin-top:14px' }, [
-        h('div', { class: 'card' }, [h('strong', {}, 'Por função/departamento'), barChart(intel.byDepartment, { height: 150, color: '#7c3aed' })]),
-        h('div', { class: 'card' }, [h('strong', {}, 'Por estado civil'), barChart(intel.byMaritalStatus, { height: 150, color: '#f59e0b' })]),
+        h('div', { class: 'card' }, [h('strong', {}, t('church.byDeptRole')), barChart(intel.byDepartment, { height: 150, color: '#7c3aed' })]),
+        h('div', { class: 'card' }, [h('strong', {}, t('church.byMaritalStatus')), barChart(intel.byMaritalStatus, { height: 150, color: '#f59e0b' })]),
       ]));
-      dashHost.appendChild(h('div', { class: 'card', style: 'margin-top:14px' }, [h('strong', {}, 'Por pastor responsável'), barChart(intel.byPastor, { height: 160, color: '#c2273d' })]));
+      dashHost.appendChild(h('div', { class: 'card', style: 'margin-top:14px' }, [h('strong', {}, t('church.byPastor')), barChart(intel.byPastor, { height: 160, color: '#c2273d' })]));
     } catch (err) {
-      dashHost.appendChild(h('div', { class: 'insight-card CRITICAL' }, `Erro ao montar o painel: ${err.message}`));
+      dashHost.appendChild(h('div', { class: 'insight-card CRITICAL' }, t('church.errBuildingDash', { msg: err.message })));
     }
   }
 
   await paintDash();
   crudHandle = await renderEntityCrud(crudHost, {
-    entityType: 'church.expansionYouth', title: 'Todos os jovens', icon: '📋', user, permissionModule: 'church', defaultVisibility: 'FAMILY',
+    entityType: 'church.expansionYouth', title: t('church.allYouthCrudTitle'), icon: '📋', user, permissionModule: 'church', defaultVisibility: 'FAMILY',
     fields: [
-      { key: 'name', label: 'Nome', required: true },
-      { key: 'birthDate', label: 'Nascimento', type: 'date' },
-      { key: 'phone', label: 'Telefone' },
-      { key: 'city', label: 'Cidade' },
-      { key: 'congregation', label: 'Congregação' },
-      { key: 'maritalStatus', label: 'Estado civil' },
-      { key: 'pastor', label: 'Pastor' },
-      { key: 'waterBaptismDate', label: 'Batismo em água', type: 'date' },
-      { key: 'holySpiritBaptism', label: 'Batizado no Espírito Santo', type: 'checkbox' },
-      { key: 'isLeader', label: 'Líder', type: 'checkbox' },
-      { key: 'department', label: 'Função/Departamento' },
-      { key: 'notes', label: 'Observações', full: true },
-      { key: 'active', label: 'Ativo', type: 'checkbox', default: true },
+      { key: 'name', label: t('church.fieldName'), required: true },
+      { key: 'birthDate', label: t('church.fieldBirthNoun'), type: 'date' },
+      { key: 'phone', label: t('church.fieldPhone') },
+      { key: 'city', label: t('church.fieldCity') },
+      { key: 'congregation', label: t('church.fieldCongregation') },
+      { key: 'maritalStatus', label: t('church.fieldMaritalStatus') },
+      { key: 'pastor', label: t('church.fieldPastor') },
+      { key: 'waterBaptismDate', label: t('church.fieldWaterBaptismDate'), type: 'date' },
+      { key: 'holySpiritBaptism', label: t('church.fieldHolySpiritBaptism'), type: 'checkbox' },
+      { key: 'isLeader', label: t('church.fieldIsLeader'), type: 'checkbox' },
+      { key: 'department', label: t('church.fieldDepartment') },
+      { key: 'notes', label: t('church.fieldObservations'), full: true },
+      { key: 'active', label: t('church.fieldActiveCheckbox'), type: 'checkbox', default: true },
     ],
     columns: [
-      { key: 'name', label: 'Nome' }, { key: 'city', label: 'Cidade' }, { key: 'department', label: 'Função' },
-      { key: 'isLeader', label: 'Líder', render: (r) => (r.isLeader ? badge('Líder', 'success') : '—') },
-      { key: 'waterBaptismDate', label: 'Batismo água', render: (r) => (r.waterBaptismDate ? fmtDate(r.waterBaptismDate) : '—') },
+      { key: 'name', label: t('church.fieldName') }, { key: 'city', label: t('church.fieldCity') }, { key: 'department', label: t('church.fieldType') },
+      { key: 'isLeader', label: t('church.leaderBadge'), render: (r) => (r.isLeader ? badge(t('church.leaderBadge'), 'success') : '—') },
+      { key: 'waterBaptismDate', label: t('church.statWaterBaptism'), render: (r) => (r.waterBaptismDate ? fmtDate(r.waterBaptismDate) : '—') },
     ],
     sortBy: (a, b) => (a.name || '').localeCompare(b.name || ''),
-    emptyTitle: 'Nenhum jovem cadastrado',
+    emptyTitle: t('church.emptyYouth'),
     onAfterChange: paintDash,
   });
 }
@@ -194,17 +195,17 @@ function smartExpansionImportCard({ onImported }) {
     const [youthStatus, eventStatus] = await Promise.all([expansionYouthConnector.getStatus(), expansionConnector.getStatus()]);
     const total = (youthStatus.totalRecordsImported || 0) + (eventStatus.totalRecordsImported || 0);
     statusHost.appendChild(h('div', { class: 'flex-between' }, [
-      h('strong', {}, 'Portal Expansão'),
+      h('strong', {}, t('church.portalExpansao')),
       badge(total ? 'CONNECTED' : 'DISCONNECTED', total ? 'success' : 'neutral'),
     ]));
-    statusHost.appendChild(h('p', { class: 'muted' }, `${youthStatus.totalRecordsImported || 0} jovem(ns) · ${eventStatus.totalRecordsImported || 0} evento(s)/observação(ões).`));
+    statusHost.appendChild(h('p', { class: 'muted' }, t('church.statusSummary', { n: youthStatus.totalRecordsImported || 0, n2: eventStatus.totalRecordsImported || 0 })));
     statusHost.appendChild(h('div', { class: 'flex gap-8' }, [
       h('button', { class: 'btn btn-sm', onClick: async () => {
         await expansionYouthConnector.importDemoDataset();
-        reportSuccess('Dataset demo importado (jovens).');
+        reportSuccess(t('church.demoImportedMsg'));
         paint();
         if (onImported) await onImported();
-      } }, 'Importar dataset demo'),
+      } }, t('church.importDemoBtn')),
     ]));
   }
 
@@ -215,17 +216,17 @@ function smartExpansionImportCard({ onImported }) {
       .map(([k, v]) => `${k}: ${v}`)
       .join(' · ');
     return h('div', { class: 'flex-between', style: 'padding:6px 0;border-bottom:1px solid var(--border);font-size:12.5px' }, [
-      h('span', {}, summary || '(sem prévia)'),
-      item.isDuplicate ? badge('Duplicado — será ignorado', 'warning') : badge('Novo', 'success'),
+      h('span', {}, summary || t('church.previewNoData')),
+      item.isDuplicate ? badge(t('church.duplicateBadge'), 'warning') : badge(t('church.newBadge'), 'success'),
     ]);
   }
 
   async function onPreview(e) {
     const file = fileInput.files[0];
-    if (!file) return reportError(new Error('Escolha um arquivo .json ou .csv.'));
+    if (!file) return reportError(new Error(t('church.chooseFileErr')));
     const previewBtn = e.currentTarget;
     previewBtn.disabled = true;
-    previewBtn.textContent = 'Analisando arquivo…';
+    previewBtn.textContent = t('church.analyzingBtn');
     try {
       const text = await readFileAsText(file);
       const rows = detectFormatAndParse(file.name, text);
@@ -233,21 +234,21 @@ function smartExpansionImportCard({ onImported }) {
       const previewed = await connector.preview(rows);
       const newCount = previewed.filter((p) => !p.isDuplicate).length;
       clear(previewHost);
-      const kindLabel = connector === expansionYouthConnector ? 'backup completo do Portal Expansão (jovens)' : 'eventos/observações Portal Expansão';
-      previewHost.appendChild(h('p', { class: 'muted' }, `Formato detectado: ${kindLabel} · ${previewed.length} registro(s) · ${newCount} novo(s) · ${previewed.length - newCount} duplicado(s).`));
+      const kindLabel = connector === expansionYouthConnector ? t('church.kindBackup') : t('church.kindEvents');
+      previewHost.appendChild(h('p', { class: 'muted' }, t('church.formatDetected', { kind: kindLabel, n: previewed.length, new: newCount, dup: previewed.length - newCount })));
       previewHost.appendChild(h('div', {}, previewed.slice(0, 10).map(previewRow)));
-      if (previewed.length > 10) previewHost.appendChild(h('div', { class: 'muted', style: 'padding-top:6px' }, `+ ${previewed.length - 10} outro(s)…`));
+      if (previewed.length > 10) previewHost.appendChild(h('div', { class: 'muted', style: 'padding-top:6px' }, t('church.moreOthers', { n: previewed.length - 10 })));
       const confirmBtn = h('button', {
         class: 'btn btn-primary btn-sm', style: 'margin-top:10px',
         onClick: async (e2) => {
           const btn = e2.currentTarget;
           btn.disabled = true;
-          btn.textContent = `Importando 0/${previewed.length}…`;
+          btn.textContent = t('church.importingBtn', { done: 0, total: previewed.length });
           try {
             const result = await connector.import(rows, {
-              onProgress: throttleProgress((done, total) => { btn.textContent = `Importando ${done}/${total}…`; }),
+              onProgress: throttleProgress((done, total) => { btn.textContent = t('church.importingBtn', { done, total }); }),
             });
-            reportSuccess(`${connector.label}: ${result.imported} importado(s), ${result.skipped} ignorado(s) (duplicado/erro).`);
+            reportSuccess(t('church.importSuccessMsg', { label: connector.label, imported: result.imported, skipped: result.skipped }));
             fileInput.value = '';
             clear(previewHost);
             paint();
@@ -255,16 +256,16 @@ function smartExpansionImportCard({ onImported }) {
           } catch (err) {
             reportError(err, connector.id);
             btn.disabled = false;
-            btn.textContent = 'Confirmar importação';
+            btn.textContent = t('church.confirmImportBtn');
           }
         },
-      }, 'Confirmar importação');
+      }, t('church.confirmImportBtn'));
       previewHost.appendChild(confirmBtn);
     } catch (err) {
       reportError(err, 'expansion-smart-import');
     } finally {
       previewBtn.disabled = false;
-      previewBtn.textContent = 'Pré-visualizar';
+      previewBtn.textContent = t('church.previewBtn');
     }
   }
 
@@ -272,124 +273,124 @@ function smartExpansionImportCard({ onImported }) {
   return h('div', { class: 'card' }, [
     statusHost,
     h('hr', { class: 'sep' }),
-    h('div', { class: 'form-field' }, [h('label', {}, 'Importar arquivo (.json ou .csv)'), fileInput]),
-    h('p', { class: 'muted', style: 'font-size:12px' }, 'Aceita tanto o backup completo do Portal Expansão quanto um export simples de eventos/observações — o formato é detectado automaticamente.'),
-    h('button', { class: 'btn btn-sm', onClick: onPreview }, 'Pré-visualizar'),
+    h('div', { class: 'form-field' }, [h('label', {}, t('church.fileFieldLabel')), fileInput]),
+    h('p', { class: 'muted', style: 'font-size:12px' }, t('church.fileFieldHint')),
+    h('button', { class: 'btn btn-sm', onClick: onPreview }, t('church.previewBtn')),
     previewHost,
   ]);
 }
 
 function rolesConfig(user) {
   return {
-    entityType: 'church.role', title: 'Funções e Cargos', icon: '🎖️', user, permissionModule: 'church', defaultVisibility: 'FAMILY',
+    entityType: 'church.role', title: t('church.rolesCrudTitle'), icon: '🎖️', user, permissionModule: 'church', defaultVisibility: 'FAMILY',
     fields: [
-      { key: 'title', label: 'Cargo', required: true },
-      { key: 'holder', label: 'Responsável', required: true },
-      { key: 'startDate', label: 'Início', type: 'date' },
-      { key: 'endDate', label: 'Fim' },
-      { key: 'active', label: 'Ativo', type: 'checkbox', default: true },
-      { key: 'description', label: 'Descrição', type: 'textarea', full: true },
-      { key: 'responsibilities', label: 'Responsabilidades', type: 'textarea', full: true },
+      { key: 'title', label: t('church.fieldRole'), required: true },
+      { key: 'holder', label: t('church.fieldHolder'), required: true },
+      { key: 'startDate', label: t('church.fieldStartDate'), type: 'date' },
+      { key: 'endDate', label: t('church.fieldEndDate') },
+      { key: 'active', label: t('church.fieldActiveCheckbox'), type: 'checkbox', default: true },
+      { key: 'description', label: t('church.fieldDescription'), type: 'textarea', full: true },
+      { key: 'responsibilities', label: t('church.fieldResponsibilities'), type: 'textarea', full: true },
     ],
     columns: [
-      { key: 'title', label: 'Cargo' }, { key: 'holder', label: 'Responsável' },
-      { key: 'active', label: 'Status', render: (r) => badge(r.active ? 'Ativo' : 'Inativo', r.active ? 'success' : 'neutral') },
-      { key: 'startDate', label: 'Início' },
+      { key: 'title', label: t('church.fieldRole') }, { key: 'holder', label: t('church.fieldHolder') },
+      { key: 'active', label: t('church.colStatus'), render: (r) => badge(r.active ? t('church.activeLabel') : t('church.inactiveLabel'), r.active ? 'success' : 'neutral') },
+      { key: 'startDate', label: t('church.fieldStartDate') },
     ],
-    emptyTitle: 'Nenhum cargo cadastrado',
+    emptyTitle: t('church.emptyRoles'),
   };
 }
 
 function peopleConfig(user) {
   return {
-    entityType: 'church.person', title: 'Pessoas', icon: '🧑‍🤝‍🧑', user, permissionModule: 'church', defaultVisibility: 'FAMILY',
+    entityType: 'church.person', title: t('church.peopleCrudTitle'), icon: '🧑‍🤝‍🧑', user, permissionModule: 'church', defaultVisibility: 'FAMILY',
     fields: [
-      { key: 'name', label: 'Nome', required: true },
-      { key: 'category', label: 'Categoria', type: 'select', options: ['MEMBRO', 'JOVEM', 'LIDER', 'PASTOR', 'RESPONSAVEL'], required: true },
-      { key: 'contact', label: 'Contato' },
-      { key: 'notes', label: 'Observações / acompanhamento', type: 'textarea', full: true },
+      { key: 'name', label: t('church.fieldName'), required: true },
+      { key: 'category', label: t('church.fieldCategory'), type: 'select', options: ['MEMBRO', 'JOVEM', 'LIDER', 'PASTOR', 'RESPONSAVEL'], required: true },
+      { key: 'contact', label: t('church.fieldContact') },
+      { key: 'notes', label: t('church.fieldNotesFollowup'), type: 'textarea', full: true },
     ],
-    columns: [{ key: 'name', label: 'Nome' }, { key: 'category', label: 'Categoria', render: (r) => badge(r.category, 'neutral') }, { key: 'contact', label: 'Contato' }],
-    filters: [{ key: 'category', label: 'Categoria', options: ['MEMBRO', 'JOVEM', 'LIDER', 'PASTOR', 'RESPONSAVEL'] }],
-    emptyTitle: 'Nenhuma pessoa cadastrada',
+    columns: [{ key: 'name', label: t('church.fieldName') }, { key: 'category', label: t('church.fieldCategory'), render: (r) => badge(r.category, 'neutral') }, { key: 'contact', label: t('church.fieldContact') }],
+    filters: [{ key: 'category', label: t('church.fieldCategory'), options: ['MEMBRO', 'JOVEM', 'LIDER', 'PASTOR', 'RESPONSAVEL'] }],
+    emptyTitle: t('church.emptyPeople'),
   };
 }
 
 function agendaConfig(user) {
   return {
-    entityType: 'church.agenda', title: 'Agenda', icon: '📅', user, permissionModule: 'church', defaultVisibility: 'FAMILY',
+    entityType: 'church.agenda', title: t('church.agendaCrudTitle'), icon: '📅', user, permissionModule: 'church', defaultVisibility: 'FAMILY',
     fields: [
-      { key: 'title', label: 'Título', required: true },
-      { key: 'type', label: 'Tipo', type: 'select', options: ['CULTO', 'REUNIAO', 'EVENTO', 'CAMPANHA', 'VIGILIA', 'VIAGEM', 'ENSAIO'], required: true },
-      { key: 'date', label: 'Data', type: 'date', required: true },
-      { key: 'location', label: 'Local' },
-      { key: 'responsible', label: 'Responsável' },
+      { key: 'title', label: t('church.fieldTitle'), required: true },
+      { key: 'type', label: t('church.fieldType'), type: 'select', options: ['CULTO', 'REUNIAO', 'EVENTO', 'CAMPANHA', 'VIGILIA', 'VIAGEM', 'ENSAIO'], required: true },
+      { key: 'date', label: t('church.fieldDate'), type: 'date', required: true },
+      { key: 'location', label: t('church.fieldLocation') },
+      { key: 'responsible', label: t('church.fieldResponsible') },
     ],
     columns: [
-      { key: 'title', label: 'Título' }, { key: 'type', label: 'Tipo', render: (r) => badge(r.type, 'neutral') },
-      { key: 'date', label: 'Data', render: (r) => fmtDate(r.date) }, { key: 'responsible', label: 'Responsável', render: (r) => r.responsible || '—' },
+      { key: 'title', label: t('church.fieldTitle') }, { key: 'type', label: t('church.fieldType'), render: (r) => badge(r.type, 'neutral') },
+      { key: 'date', label: t('church.fieldDate'), render: (r) => fmtDate(r.date) }, { key: 'responsible', label: t('church.fieldResponsible'), render: (r) => r.responsible || '—' },
     ],
     sortBy: (a, b) => (a.date || '').localeCompare(b.date || ''),
-    emptyTitle: 'Nenhum evento agendado',
+    emptyTitle: t('church.emptyAgenda'),
   };
 }
 
 function sermonsConfig(user) {
   return {
-    entityType: 'church.sermon', title: 'Pregações e Estudos', icon: '📖', user, permissionModule: 'church', defaultVisibility: 'FAMILY',
+    entityType: 'church.sermon', title: t('church.sermonsCrudTitle'), icon: '📖', user, permissionModule: 'church', defaultVisibility: 'FAMILY',
     fields: [
-      { key: 'title', label: 'Título', required: true },
-      { key: 'theme', label: 'Tema' },
-      { key: 'verses', label: 'Texto / Versículos' },
-      { key: 'durationMinutes', label: 'Duração (min)', type: 'number' },
-      { key: 'date', label: 'Data', type: 'date' },
-      { key: 'location', label: 'Local' },
-      { key: 'status', label: 'Status', type: 'select', options: ['PLANEJADO', 'PREPARADO', 'APRESENTADO'], default: 'PLANEJADO' },
+      { key: 'title', label: t('church.fieldTitle'), required: true },
+      { key: 'theme', label: t('church.fieldTheme') },
+      { key: 'verses', label: t('church.fieldVerses') },
+      { key: 'durationMinutes', label: t('church.fieldDuration'), type: 'number' },
+      { key: 'date', label: t('church.fieldDate'), type: 'date' },
+      { key: 'location', label: t('church.fieldLocation') },
+      { key: 'status', label: t('church.colStatus'), type: 'select', options: ['PLANEJADO', 'PREPARADO', 'APRESENTADO'], default: 'PLANEJADO' },
     ],
     columns: [
-      { key: 'title', label: 'Título' }, { key: 'theme', label: 'Tema' },
-      { key: 'date', label: 'Data', render: (r) => fmtDate(r.date) },
-      { key: 'status', label: 'Status', render: (r) => badge(r.status, r.status === 'APRESENTADO' ? 'success' : 'neutral') },
+      { key: 'title', label: t('church.fieldTitle') }, { key: 'theme', label: t('church.fieldTheme') },
+      { key: 'date', label: t('church.fieldDate'), render: (r) => fmtDate(r.date) },
+      { key: 'status', label: t('church.colStatus'), render: (r) => badge(r.status, r.status === 'APRESENTADO' ? 'success' : 'neutral') },
     ],
-    emptyTitle: 'Nenhuma pregação/estudo registrado',
+    emptyTitle: t('church.emptySermons'),
   };
 }
 
 function projectsConfig(user) {
   return {
-    entityType: 'church.project', title: 'Projetos', icon: '📌', user, permissionModule: 'church', defaultVisibility: 'FAMILY',
+    entityType: 'church.project', title: t('church.projectsCrudTitle'), icon: '📌', user, permissionModule: 'church', defaultVisibility: 'FAMILY',
     fields: [
-      { key: 'name', label: 'Nome', required: true },
-      { key: 'type', label: 'Tipo', type: 'select', options: ['EVENTO', 'ACAO', 'TREINAMENTO', 'INICIATIVA'] },
-      { key: 'status', label: 'Status', type: 'select', options: ['PLANEJADO', 'EM_ANDAMENTO', 'CONCLUIDO', 'CANCELADO'], default: 'PLANEJADO' },
-      { key: 'startDate', label: 'Início', type: 'date' },
-      { key: 'notes', label: 'Notas', type: 'textarea', full: true },
+      { key: 'name', label: t('church.fieldName'), required: true },
+      { key: 'type', label: t('church.fieldType'), type: 'select', options: ['EVENTO', 'ACAO', 'TREINAMENTO', 'INICIATIVA'] },
+      { key: 'status', label: t('church.colStatus'), type: 'select', options: ['PLANEJADO', 'EM_ANDAMENTO', 'CONCLUIDO', 'CANCELADO'], default: 'PLANEJADO' },
+      { key: 'startDate', label: t('church.fieldStartDate'), type: 'date' },
+      { key: 'notes', label: t('church.fieldNotes'), type: 'textarea', full: true },
     ],
     columns: [
-      { key: 'name', label: 'Nome' }, { key: 'type', label: 'Tipo', render: (r) => badge(r.type, 'neutral') },
-      { key: 'status', label: 'Status', render: (r) => badge(r.status, r.status === 'CONCLUIDO' ? 'success' : 'neutral') },
+      { key: 'name', label: t('church.fieldName') }, { key: 'type', label: t('church.fieldType'), render: (r) => badge(r.type, 'neutral') },
+      { key: 'status', label: t('church.colStatus'), render: (r) => badge(r.status, r.status === 'CONCLUIDO' ? 'success' : 'neutral') },
     ],
-    emptyTitle: 'Nenhum projeto cadastrado',
+    emptyTitle: t('church.emptyProjects'),
   };
 }
 
 function followupConfig(user) {
   return {
-    entityType: 'church.followup', title: 'Acompanhamento', icon: '🤝', user, permissionModule: 'church', defaultVisibility: 'FAMILY',
+    entityType: 'church.followup', title: t('church.followupCrudTitle'), icon: '🤝', user, permissionModule: 'church', defaultVisibility: 'FAMILY',
     fields: [
-      { key: 'personName', label: 'Pessoa', required: true },
-      { key: 'reason', label: 'Motivo', required: true },
-      { key: 'responsible', label: 'Responsável' },
-      { key: 'nextAction', label: 'Próxima ação' },
-      { key: 'date', label: 'Data', type: 'date' },
-      { key: 'status', label: 'Status', type: 'select', options: ['ABERTO', 'EM_ANDAMENTO', 'CONCLUIDO'], default: 'ABERTO' },
+      { key: 'personName', label: t('church.fieldPersonName'), required: true },
+      { key: 'reason', label: t('church.fieldReason'), required: true },
+      { key: 'responsible', label: t('church.fieldResponsible') },
+      { key: 'nextAction', label: t('church.fieldNextAction') },
+      { key: 'date', label: t('church.fieldDate'), type: 'date' },
+      { key: 'status', label: t('church.colStatus'), type: 'select', options: ['ABERTO', 'EM_ANDAMENTO', 'CONCLUIDO'], default: 'ABERTO' },
     ],
     columns: [
-      { key: 'personName', label: 'Pessoa' }, { key: 'reason', label: 'Motivo' },
-      { key: 'date', label: 'Data', render: (r) => fmtDate(r.date) },
-      { key: 'status', label: 'Status', render: (r) => badge(r.status, r.status === 'CONCLUIDO' ? 'success' : 'warning') },
+      { key: 'personName', label: t('church.fieldPersonName') }, { key: 'reason', label: t('church.fieldReason') },
+      { key: 'date', label: t('church.fieldDate'), render: (r) => fmtDate(r.date) },
+      { key: 'status', label: t('church.colStatus'), render: (r) => badge(r.status, r.status === 'CONCLUIDO' ? 'success' : 'warning') },
     ],
-    emptyTitle: 'Nenhum acompanhamento em aberto',
+    emptyTitle: t('church.emptyFollowup'),
   };
 }
 

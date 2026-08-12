@@ -12,6 +12,7 @@ import { canViewResource, can } from '../core/permissions.js';
 import { navigate } from '../core/router.js';
 import { listSchoolChildren, computeSchoolEvolution, summarizeComparison } from '../core/schoolIntelligence.js';
 import { computeExpansionIntelligence } from '../core/expansionIntelligence.js';
+import { t } from '../core/i18n.js';
 
 /**
  * Central Dashboards: one screen that pulls the chart already built for
@@ -23,11 +24,11 @@ import { computeExpansionIntelligence } from '../core/expansionIntelligence.js';
 export async function render(container, ctx) {
   const { user } = ctx;
   clear(container);
-  container.appendChild(h('h1', {}, '📊 Dashboards'));
-  container.appendChild(h('p', {}, 'Visão consolidada de gráficos de vários módulos em um só lugar. Clique em "Abrir módulo" em qualquer card para o detalhe completo.'));
+  container.appendChild(h('h1', {}, t('dashboards.title')));
+  container.appendChild(h('p', {}, t('dashboards.subtitle')));
 
   const grid = h('div', { class: 'grid grid-2' });
-  container.appendChild(h('div', { class: 'loading-spinner' }, 'Calculando…'));
+  container.appendChild(h('div', { class: 'loading-spinner' }, t('dashboards.calculating')));
 
   // Each card is gated by the same module permission its own screen uses —
   // Dashboards is a read-only aggregation view, not a permission bypass. A
@@ -54,10 +55,10 @@ export async function render(container, ctx) {
   const cards = await Promise.all(cardBuilders.map((fn) => fn(user)));
 
   clear(container);
-  container.appendChild(h('h1', {}, '📊 Dashboards'));
-  container.appendChild(h('p', {}, 'Visão consolidada de gráficos de vários módulos em um só lugar. Clique em "Abrir módulo" em qualquer card para o detalhe completo.'));
+  container.appendChild(h('h1', {}, t('dashboards.title')));
+  container.appendChild(h('p', {}, t('dashboards.subtitle')));
   if (!cards.length) {
-    container.appendChild(emptyState({ icon: '📊', title: 'Nenhum módulo com dados disponível', message: 'Seu perfil não tem acesso a módulos com dashboards ainda.' }));
+    container.appendChild(emptyState({ icon: '📊', title: t('dashboards.noModules'), message: t('dashboards.noModulesMsg') }));
     return;
   }
   cards.forEach((c) => grid.appendChild(c));
@@ -68,7 +69,7 @@ function cardShell(title, route, bodyNode, { clickable = false } = {}) {
   const card = h('div', { class: 'card', style: clickable ? 'cursor:pointer' : '' }, [
     h('div', { class: 'flex-between', style: 'margin-bottom:10px' }, [
       h('h3', { style: 'margin:0' }, title),
-      h('button', { class: 'btn btn-sm', onClick: (e) => { e.stopPropagation(); navigate(`/${route}`); } }, 'Abrir módulo →'),
+      h('button', { class: 'btn btn-sm', onClick: (e) => { e.stopPropagation(); navigate(`/${route}`); } }, t('dashboards.openModule')),
     ]),
     bodyNode,
   ]);
@@ -81,22 +82,22 @@ async function financeCard() {
   const currentMonth = breakdown.months[new Date().getMonth()];
   const body = h('div', {}, [
     h('div', { class: 'grid grid-3', style: 'margin-bottom:10px' }, [
-      statTile('Receitas (mês)', fmtMoney(currentMonth.income), null, 'success'),
-      statTile('Despesas (mês)', fmtMoney(currentMonth.expense), null, 'critical'),
-      statTile('Saldo (mês)', fmtMoney(currentMonth.net), null, currentMonth.net >= 0 ? 'info' : 'critical'),
+      statTile(t('dashboards.incomeMonth'), fmtMoney(currentMonth.income), null, 'success'),
+      statTile(t('dashboards.expenseMonth'), fmtMoney(currentMonth.expense), null, 'critical'),
+      statTile(t('dashboards.balanceMonth'), fmtMoney(currentMonth.net), null, currentMonth.net >= 0 ? 'info' : 'critical'),
     ]),
     spending.categories.length
       ? barChart(spending.categories.slice(0, 6), { height: 140, valueFmt: (v) => fmtMoney(v) })
-      : emptyState({ icon: '💰', title: 'Sem despesas registradas' }),
-    h('div', { class: 'muted', style: 'margin-top:6px' }, `Projeção 12 meses: ${fmtMoney(forecast.projection12)}`),
+      : emptyState({ icon: '💰', title: t('dashboards.noExpenses') }),
+    h('div', { class: 'muted', style: 'margin-top:6px' }, t('dashboards.projection12', { value: fmtMoney(forecast.projection12) })),
   ]);
-  return cardShell(`💰 Financeiro — ${currentMonth.label}/${breakdown.year}`, 'finance', body, { clickable: true });
+  return cardShell(t('dashboards.financeCardTitle', { month: currentMonth.label, year: breakdown.year }), 'finance', body, { clickable: true });
 }
 
 function deltaBadge(current, previous) {
   if (current === null || current === undefined || previous === null || previous === undefined) return badge('—', 'neutral');
   const diff = current - previous;
-  if (Math.abs(diff) < 0.05) return badge('= sem variação', 'neutral');
+  if (Math.abs(diff) < 0.05) return badge(t('dashboards.noVariation'), 'neutral');
   return badge(`${diff >= 0 ? '▲' : '▼'} ${Math.abs(diff).toFixed(1)}`, diff >= 0 ? 'success' : 'critical');
 }
 
@@ -120,46 +121,46 @@ async function acompanhaCard(user) {
   const parts = [];
   if (eventData.length) {
     parts.push(barChart(eventData, { height: 120, color: '#f59e0b' }));
-    parts.push(h('div', { class: 'muted', style: 'margin:6px 0 12px' }, alerts ? `⚠️ ${alerts} alerta(s) ativo(s) entre os filhos acompanhados.` : '✅ Nenhum alerta ativo.'));
+    parts.push(h('div', { class: 'muted', style: 'margin:6px 0 12px' }, alerts ? t('dashboards.activeAlerts', { n: alerts }) : t('dashboards.noActiveAlerts')));
   }
   if (gradeRows.length) {
-    parts.push(h('div', { class: 'muted', style: 'font-size:12px;margin-bottom:4px' }, 'Notas — bimestre atual vs. anterior'));
+    parts.push(h('div', { class: 'muted', style: 'font-size:12px;margin-bottom:4px' }, t('dashboards.gradesCurrentVsPrevious')));
     parts.push(h('div', {}, gradeRows.map((r) => h('div', { class: 'flex-between', style: 'padding:6px 0;border-bottom:1px solid var(--border);font-size:12.5px' }, [
-      h('span', {}, `${r.child}: ${r.bimester.currentAvg != null ? r.bimester.currentAvg.toFixed(1) : '—'}${r.bimester.previousAvg != null ? ` · anterior: ${r.bimester.previousAvg.toFixed(1)}` : ''}`),
+      h('span', {}, `${r.child}: ${r.bimester.currentAvg != null ? r.bimester.currentAvg.toFixed(1) : '—'}${r.bimester.previousAvg != null ? ` · ${t('dashboards.previousAvg', { value: r.bimester.previousAvg.toFixed(1) })}` : ''}`),
       deltaBadge(r.bimester.currentAvg, r.bimester.previousAvg),
     ]))));
   }
-  if (!parts.length) parts.push(emptyState({ icon: '🎓', title: 'Sem dados do Acompanha+ ainda' }));
+  if (!parts.length) parts.push(emptyState({ icon: '🎓', title: t('dashboards.noAcompanhaData') }));
 
-  return cardShell('🎓 Acompanha+ School', 'acompanha-plus', h('div', {}, parts), { clickable: true });
+  return cardShell(t('dashboards.acompanhaCardTitle'), 'acompanha-plus', h('div', {}, parts), { clickable: true });
 }
 
 async function workCard() {
   const timesheet = await computeTimesheet('MONTH');
   const body = timesheet.byCategory.length
     ? barChart(timesheet.byCategory, { height: 160, valueFmt: (v) => `${v}h`, color: '#0ea5a5' })
-    : emptyState({ icon: '💼', title: 'Sem atividades de trabalho este mês' });
-  return cardShell('💼 Trabalho — horas por categoria (mês)', 'work', body);
+    : emptyState({ icon: '💼', title: t('dashboards.noWorkActivities') });
+  return cardShell(t('dashboards.workCardTitle'), 'work', body);
 }
 
 async function careerCard() {
   const scores = await computeCareerEvidenceScores();
   const body = scores.length
     ? barChart(scores.slice(0, 6).map((s) => ({ label: s.skill, value: s.score })), { height: 160, color: '#7c3aed' })
-    : emptyState({ icon: '🚀', title: 'Sem achievements registrados' });
-  return cardShell('🚀 Carreira — score por competência', 'career', body);
+    : emptyState({ icon: '🚀', title: t('dashboards.noAchievements') });
+  return cardShell(t('dashboards.careerCardTitle'), 'career', body);
 }
 
 async function englishCard() {
   const dashboard = await computeEnglishDashboard();
   const body = radarChart(dashboard.dims.map((d) => ({ label: d.label, value: d.value })), { width: 280, height: 240 });
-  return cardShell('🗣️ Inglês — radar de competências', 'english', body);
+  return cardShell(t('dashboards.englishCardTitle'), 'english', body);
 }
 
 async function lifeBalanceCard() {
   const { normalized } = await computeLifeBalance();
   const body = radarChart(normalized.map((d) => ({ label: d.label, value: d.norm })), { width: 280, height: 240, color: '#0ea5a5' });
-  return cardShell('⚖️ Life Balance — últimos 30 dias', 'life-balance', body);
+  return cardShell(t('dashboards.lifeBalanceCardTitle'), 'life-balance', body);
 }
 
 async function jobsCard(user) {
@@ -169,41 +170,41 @@ async function jobsCard(user) {
   const data = Object.entries(byStatus).map(([label, value]) => ({ label, value }));
   const body = data.length
     ? barChart(data, { height: 160, color: '#c2273d' })
-    : emptyState({ icon: '🎯', title: 'Nenhuma vaga no pipeline' });
-  return cardShell('🎯 Vagas — pipeline por etapa', 'jobs', body);
+    : emptyState({ icon: '🎯', title: t('dashboards.noJobs') });
+  return cardShell(t('dashboards.jobsCardTitle'), 'jobs', body);
 }
 
 async function churchCard() {
   const intel = await computeChurchIntelligence();
   const body = h('div', {}, [
     h('div', { class: 'grid grid-2' }, [
-      statTile('Projetos ativos', intel.ministryHealth.activeProjects),
-      statTile('Eventos (14 dias)', intel.ministryHealth.upcomingEvents),
+      statTile(t('dashboards.churchActiveProjects'), intel.ministryHealth.activeProjects),
+      statTile(t('dashboards.churchEventsSoon'), intel.ministryHealth.upcomingEvents),
     ]),
     intel.peopleAttentionRadar.length
-      ? h('div', { class: 'muted', style: 'margin-top:8px' }, `⚠️ ${intel.peopleAttentionRadar.length} pessoa(s) precisam de acompanhamento.`)
-      : h('div', { class: 'muted', style: 'margin-top:8px' }, '✅ Acompanhamento em dia.'),
+      ? h('div', { class: 'muted', style: 'margin-top:8px' }, t('dashboards.churchAttentionNeeded', { n: intel.peopleAttentionRadar.length }))
+      : h('div', { class: 'muted', style: 'margin-top:8px' }, t('dashboards.churchUpToDate')),
   ]);
-  return cardShell('⛪ Igreja — saúde do ministério', 'church', body);
+  return cardShell(t('dashboards.churchCardTitle'), 'church', body);
 }
 
 async function expansionYouthCard(user) {
   const intel = await computeExpansionIntelligence(user);
   let body;
   if (!intel.hasData) {
-    body = emptyState({ icon: '🌍', title: 'Sem dados do Portal Expansão ainda' });
+    body = emptyState({ icon: '🌍', title: t('dashboards.noExpansionData') });
   } else {
     body = h('div', {}, [
       h('div', { class: 'grid grid-3', style: 'margin-bottom:10px' }, [
-        statTile('Jovens ativos', intel.total),
-        statTile('Líderes', intel.leaders),
-        statTile('Batizados em água', `${intel.waterBaptism.pct}%`, null, intel.waterBaptism.pct >= 70 ? 'success' : intel.waterBaptism.pct >= 40 ? 'info' : 'critical'),
+        statTile(t('dashboards.activeYouth'), intel.total),
+        statTile(t('dashboards.leaders'), intel.leaders),
+        statTile(t('dashboards.waterBaptized'), `${intel.waterBaptism.pct}%`, null, intel.waterBaptism.pct >= 70 ? 'success' : intel.waterBaptism.pct >= 40 ? 'info' : 'critical'),
       ]),
       intel.byCity.length ? barChart(intel.byCity.slice(0, 6), { height: 130 }) : null,
       intel.upcomingBirthdays.length
-        ? h('div', { class: 'muted', style: 'margin-top:6px' }, `🎂 ${intel.upcomingBirthdays.length} aniversariante(s) nos próximos 30 dias.`)
-        : h('div', { class: 'muted', style: 'margin-top:6px' }, 'Nenhum aniversário nos próximos 30 dias.'),
+        ? h('div', { class: 'muted', style: 'margin-top:6px' }, t('dashboards.upcomingBirthdaysCount', { n: intel.upcomingBirthdays.length }))
+        : h('div', { class: 'muted', style: 'margin-top:6px' }, t('dashboards.noBirthdaysSoon')),
     ]);
   }
-  return cardShell('🌍 Portal Expansão — Jovens', 'church/expansion-youth', body, { clickable: true });
+  return cardShell(t('dashboards.expansionYouthCardTitle'), 'church/expansion-youth', body, { clickable: true });
 }

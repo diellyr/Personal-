@@ -4,6 +4,7 @@ import { listForUser, unreadCount, markRead, markResolved } from '../../core/not
 import { severityBadge } from '../components/misc.js';
 import { navigate } from '../../core/router.js';
 import { toggleSidebar } from './sidebarToggle.js';
+import { t, getLanguage, setLanguage } from '../../core/i18n.js';
 
 let dropdownOpen = false;
 let outsideClickHandler = null;
@@ -31,10 +32,10 @@ export async function renderHeader(container, user, def) {
   // multiple times per click.
   if (outsideClickHandler) document.removeEventListener('click', outsideClickHandler);
 
-  const menuToggle = h('button', { class: 'menu-toggle', title: 'Menu', onClick: (e) => { e.stopPropagation(); toggleSidebar(); } }, '☰');
+  const menuToggle = h('button', { class: 'menu-toggle', title: t('header.menu'), onClick: (e) => { e.stopPropagation(); toggleSidebar(); } }, '☰');
   const crumbs = h('div', { class: 'breadcrumbs' }, `${def ? def.label : ''}`);
 
-  const bell = h('button', { class: 'notif-bell', title: 'Notificações' }, '🔔');
+  const bell = h('button', { class: 'notif-bell', title: t('header.notifications') }, '🔔');
   const count = await unreadCount(user.id);
   if (count > 0) bell.appendChild(h('span', { class: 'notif-dot' }, String(count > 99 ? '99+' : count)));
   const dropdownHost = h('div', { style: 'position:relative' }, bell);
@@ -71,21 +72,21 @@ export async function renderHeader(container, user, def) {
           h('div', { class: 'muted', style: 'font-size:12px;margin:3px 0' }, n.message),
           h('div', { class: 'muted', style: 'font-size:10.5px' }, `${n.module} · ${fmtDateTime(n.createdAt)} · ${n.status}`),
         ]))
-      : [h('div', { style: 'padding:16px;text-align:center' }, 'Sem notificações.')];
+      : [h('div', { style: 'padding:16px;text-align:center' }, t('header.notifEmpty'))];
     const dd = h('div', {
       class: 'notif-dropdown card',
       style: 'position:absolute;right:0;top:34px;width:340px;max-height:420px;overflow-y:auto;padding:0;z-index:50',
     }, [
-      h('div', { style: 'padding:10px 12px;font-weight:700;border-bottom:1px solid var(--border)' }, 'Notification Center'),
+      h('div', { style: 'padding:10px 12px;font-weight:700;border-bottom:1px solid var(--border)' }, t('header.notifTitle')),
       ...list,
-      h('div', { style: 'padding:8px 12px;text-align:center' }, h('button', { class: 'link-btn', onClick: () => navigate('/tasks') }, 'Ver todas as tarefas')),
+      h('div', { style: 'padding:8px 12px;text-align:center' }, h('button', { class: 'link-btn', onClick: () => navigate('/tasks') }, t('header.viewAllTasks'))),
     ]);
     dropdownHost.appendChild(dd);
   }
   outsideClickHandler = () => { if (dropdownOpen) { dropdownOpen = false; paintDropdown(); } };
   document.addEventListener('click', outsideClickHandler);
 
-  const themeBtn = h('button', { class: 'btn btn-icon', title: 'Alternar tema' }, document.documentElement.dataset.theme === 'dark' ? '☀️' : '🌙');
+  const themeBtn = h('button', { class: 'btn btn-icon', title: t('header.toggleTheme') }, document.documentElement.dataset.theme === 'dark' ? '☀️' : '🌙');
   themeBtn.addEventListener('click', () => {
     const cur = document.documentElement.dataset.theme;
     const next = cur === 'dark' ? 'light' : 'dark';
@@ -93,6 +94,9 @@ export async function renderHeader(container, user, def) {
     localStorage.setItem('dielly_os_theme', next);
     themeBtn.textContent = next === 'dark' ? '☀️' : '🌙';
   });
+
+  const langBtn = h('button', { class: 'btn btn-icon', title: t('header.toggleLanguage'), style: 'font-size:11px;font-weight:700' }, getLanguage() === 'pt' ? 'EN' : 'PT');
+  langBtn.addEventListener('click', () => setLanguage(getLanguage() === 'pt' ? 'en' : 'pt'));
 
   const userMenu = h('div', { class: 'flex gap-8', style: 'cursor:pointer' }, [
     h('div', { class: 'avatar' }, user.displayName.slice(0, 2).toUpperCase()),
@@ -108,12 +112,12 @@ export async function renderHeader(container, user, def) {
       h('div', { style: 'padding:6px 8px;font-weight:700' }, user.displayName),
       h('div', { style: 'padding:0 8px 6px;font-size:11px' }, h('span', { class: 'badge badge-info' }, user.role)),
       h('hr', { class: 'sep', style: 'margin:6px 0' }),
-      h('div', { class: 'nav-item', style: 'color:var(--text)', onClick: () => logout().then(() => location.reload()) }, '🚪 Sair'),
+      h('div', { class: 'nav-item', style: 'color:var(--text)', onClick: () => logout().then(() => location.reload()) }, t('header.logout')),
     ]);
     document.body.appendChild(dd);
     document.addEventListener('click', () => dd.remove(), { once: true });
   });
 
   container.appendChild(h('div', { class: 'flex gap-12' }, [menuToggle, crumbs]));
-  container.appendChild(h('div', { class: 'header-actions' }, [dropdownHost, themeBtn, userMenu]));
+  container.appendChild(h('div', { class: 'header-actions' }, [dropdownHost, langBtn, themeBtn, userMenu]));
 }

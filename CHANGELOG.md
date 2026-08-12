@@ -8,6 +8,54 @@ All notable changes to this project are documented in this file. Format based on
 
 Nothing yet.
 
+## [1.12.0] — 2026-08-12
+
+### Added
+
+- **English/Portuguese language toggle.** New `js/core/i18n.js`: a flat
+  `pt`/`en` dictionary keyed by dotted namespace (`login.*`, `header.*`,
+  `crud.*`, `cc.*`, `finance.*`, `family.*`, `church.*`, `dashboards.*`,
+  …), a `t(key, vars)` lookup with `{placeholder}` interpolation and
+  graceful fallback to the key itself if a translation is missing, and
+  `setLanguage()`/`onLanguageChange()` so the toggle can force a full
+  re-render — there's no reactive framework here, so "switching language"
+  means re-invoking whatever `render()` built the current screen, the same
+  mechanism the router already uses on navigation. The language choice
+  persists in `localStorage`. A toggle button (`EN`/`PT`) was added to
+  both the login screen and the logged-in header, next to the theme
+  toggle.
+- **Translation coverage this pass**: the app shell (login form, header,
+  notification dropdown), the shared CRUD engine
+  (`js/core/entityModuleEngine.js` — every module built on it gets
+  translated list/search/empty-state/modal/delete-confirm chrome for
+  free), and five full modules end-to-end — Command Center, Finance,
+  Family, Church (including the Expansão smart-import card and youth
+  census dashboard), and Dashboards. This includes system-generated
+  dynamic text (empty-state messages, chart labels, AI-insight section
+  titles, computed stat labels) as well as static chrome, per the intent
+  of "translate the whole app, including generated content." Finance's
+  month abbreviations (`js/core/financeIntelligence.js`) are now
+  language-aware too, since they feed both the Finance page and the
+  Dashboards finance card.
+- **Explicitly out of scope, by design**: content you typed yourself —
+  transaction descriptions, task titles, notes, church/family record
+  names — is never auto-translated. There's no reliable way to translate
+  arbitrary free text you wrote without risking a wrong or misleading
+  result, so it always displays as entered regardless of the selected
+  language. Demo/seed data (e.g. `"Salário (DEMO)"`) is treated the same
+  way, since it exists to model real user-entered content.
+
+### Known follow-up (not in this release)
+
+- ~30 remaining modules (Work, Career, Job Hunter, English Intelligence,
+  Studies, AI Insights, Life Balance, Decisions, Pains, Ideas, Personal
+  Memory, CRM, Projects & Goals, Administration, Owner suite, Hobbies/
+  Travel, Health, Global Calendar, Tasks, Global Search, and the
+  Acompanha+ School / Backup Escola intelligence screens beyond what the
+  shared CRUD engine already covers) are still Portuguese-only. They'll
+  be translated incrementally in follow-up passes — tracked, not
+  forgotten.
+
 ## [1.11.1] — 2026-08-11
 
 ### Added

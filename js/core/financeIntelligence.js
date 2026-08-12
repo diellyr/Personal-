@@ -1,5 +1,6 @@
 import { EntityRepository } from './entityRepository.js';
 import { todayIso } from './dateUtils.js';
+import { getLanguage } from './i18n.js';
 
 async function all(entityType) {
   return new EntityRepository(entityType).findAll();
@@ -29,13 +30,15 @@ export async function computeSpendingIntelligence() {
   return { categories, outliers, subscriptions, avg };
 }
 
-const MONTH_LABELS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+const MONTH_LABELS_PT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+const MONTH_LABELS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 /** Full-year, month-by-month income/expense breakdown, with the underlying
  * transactions attached to each month so a UI can drill into any month. */
 export async function computeMonthlyBreakdown(year = new Date().getFullYear()) {
   const tx = await all('finance.transaction');
-  const months = MONTH_LABELS.map((label, i) => {
+  const monthLabels = getLanguage() === 'en' ? MONTH_LABELS_EN : MONTH_LABELS_PT;
+  const months = monthLabels.map((label, i) => {
     const monthKey = `${year}-${String(i + 1).padStart(2, '0')}`;
     const monthTx = tx.filter((t) => (t.data.date || '').startsWith(monthKey));
     const income = monthTx.filter((t) => t.data.type === 'INCOME').reduce((a, t) => a + Number(t.data.amount || 0), 0);

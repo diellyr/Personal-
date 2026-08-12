@@ -7,21 +7,22 @@ import { barChart, lineChart } from '../ui/components/chart.js';
 import { computeFinanceDashboard, computeSpendingIntelligence, computeForecast, evaluateFinancialDecision, computeMonthlyBreakdown } from '../core/financeIntelligence.js';
 import { connectorMetaRepository } from '../core/entities/connectorMetaRepository.js';
 import { navigate } from '../core/router.js';
+import { t, getLanguage } from '../core/i18n.js';
 
 export async function render(container, ctx) {
   const { user, subview } = ctx;
   clear(container);
-  container.appendChild(h('h1', {}, '💰 Financeiro'));
-  container.appendChild(h('p', {}, 'Receitas, despesas, orçamento, metas, projeções e agente de decisão financeira.'));
+  container.appendChild(h('h1', {}, t('finance.title')));
+  container.appendChild(h('p', {}, t('finance.subtitle')));
 
   const tabs = [
-    { key: 'dashboard', label: 'Dashboard', render: renderDashboard },
-    { key: 'transactions', label: 'Transações', render: (c) => renderEntityCrud(c, txConfig(user)) },
-    { key: 'spending', label: 'Spending Intelligence', render: renderSpending },
-    { key: 'goals', label: 'Goal Manager', render: (c) => renderEntityCrud(c, goalsConfig(user), { onAfterChange: null }) },
-    { key: 'forecast', label: 'Forecast', render: renderForecast },
-    { key: 'decision', label: 'Financial Decision Agent', render: renderDecisionAgent },
-    { key: 'debts', label: 'Dívidas & Investimentos', render: renderDebtsInvestments },
+    { key: 'dashboard', label: t('finance.tabDashboard'), render: renderDashboard },
+    { key: 'transactions', label: t('finance.tabTransactions'), render: (c) => renderEntityCrud(c, txConfig(user)) },
+    { key: 'spending', label: t('finance.tabSpending'), render: renderSpending },
+    { key: 'goals', label: t('finance.tabGoals'), render: (c) => renderEntityCrud(c, goalsConfig(user), { onAfterChange: null }) },
+    { key: 'forecast', label: t('finance.tabForecast'), render: renderForecast },
+    { key: 'decision', label: t('finance.tabDecision'), render: renderDecisionAgent },
+    { key: 'debts', label: t('finance.tabDebts'), render: renderDebtsInvestments },
   ];
   container.appendChild(renderTabs(tabs, subview));
 
@@ -29,22 +30,22 @@ export async function render(container, ctx) {
     clear(c);
     const d = await computeFinanceDashboard();
     c.appendChild(h('div', { class: 'grid grid-4' }, [
-      statTile('Receitas', fmtMoney(d.income), null, 'success'),
-      statTile('Despesas', fmtMoney(d.expense), null, 'critical'),
-      statTile('Saldo', fmtMoney(d.balance), null, d.balance >= 0 ? 'info' : 'critical'),
-      statTile('Patrimônio líquido', fmtMoney(d.netWorth)),
+      statTile(t('finance.income'), fmtMoney(d.income), null, 'success'),
+      statTile(t('finance.expense'), fmtMoney(d.expense), null, 'critical'),
+      statTile(t('finance.balance'), fmtMoney(d.balance), null, d.balance >= 0 ? 'info' : 'critical'),
+      statTile(t('finance.netWorth'), fmtMoney(d.netWorth)),
     ]));
-    c.appendChild(sectionTitle('🎯 Metas financeiras'));
+    c.appendChild(sectionTitle(t('finance.goalsTitle')));
     c.appendChild(d.goals.length ? h('div', { class: 'grid grid-2' }, d.goals.map((g) => {
       const pct = g.data.targetAmount ? (Number(g.data.currentAmount || 0) / Number(g.data.targetAmount)) * 100 : 0;
       return h('div', { class: 'card' }, [
         h('div', { class: 'flex-between' }, [h('strong', {}, g.data.name), badge(g.data.category, 'neutral')]),
-        h('p', {}, `${fmtMoney(g.data.currentAmount)} de ${fmtMoney(g.data.targetAmount)}`),
+        h('p', {}, t('finance.ofTarget', { current: fmtMoney(g.data.currentAmount), target: fmtMoney(g.data.targetAmount) })),
         progressBar(pct),
       ]);
-    })) : emptyState({ icon: '🎯', title: 'Nenhuma meta cadastrada', actionLabel: 'Ir para Goal Manager', onAction: () => document.querySelector('.tab:nth-child(4)')?.click() }));
+    })) : emptyState({ icon: '🎯', title: t('finance.noGoals'), actionLabel: t('finance.goToGoalManager'), onAction: () => document.querySelector('.tab:nth-child(4)')?.click() }));
 
-    c.appendChild(sectionTitle(`📅 Acompanhamento mensal — ${new Date().getFullYear()}`));
+    c.appendChild(sectionTitle(t('finance.monthlyTracking', { year: new Date().getFullYear() })));
     const breakdown = await computeMonthlyBreakdown();
     const monthDetailHost = h('div', { style: 'margin-top:14px' });
 
@@ -53,31 +54,31 @@ export async function render(container, ctx) {
       if (!m) return;
       const sorted = [...m.transactions].sort((a, b) => (b.data.date || '').localeCompare(a.data.date || ''));
       monthDetailHost.appendChild(h('div', { class: 'card' }, [
-        h('div', { class: 'flex-between' }, [h('strong', {}, `${m.label} de ${breakdown.year}`), badge(`${m.transactions.length} transação(ões)`, 'neutral')]),
+        h('div', { class: 'flex-between' }, [h('strong', {}, t('finance.ofTarget', { current: m.label, target: breakdown.year })), badge(t('finance.transactionsCount', { n: m.transactions.length }), 'neutral')]),
         h('div', { class: 'grid grid-3', style: 'margin-top:10px' }, [
-          statTile('Receitas', fmtMoney(m.income), null, 'success'),
-          statTile('Despesas', fmtMoney(m.expense), null, 'critical'),
-          statTile('Saldo', fmtMoney(m.net), null, m.net >= 0 ? 'info' : 'critical'),
+          statTile(t('finance.income'), fmtMoney(m.income), null, 'success'),
+          statTile(t('finance.expense'), fmtMoney(m.expense), null, 'critical'),
+          statTile(t('finance.balance'), fmtMoney(m.net), null, m.net >= 0 ? 'info' : 'critical'),
         ]),
         sorted.length
           ? h('div', { class: 'table-wrap', style: 'margin-top:10px' }, h('table', { class: 'data-table' }, [
-            h('thead', {}, h('tr', {}, [h('th', {}, 'Descrição'), h('th', {}, 'Categoria'), h('th', {}, 'Tipo'), h('th', {}, 'Valor'), h('th', {}, 'Data')])),
-            h('tbody', {}, sorted.map((t) => h('tr', {}, [
-              h('td', {}, t.data.description), h('td', {}, t.data.category),
-              h('td', {}, badge(t.data.type === 'INCOME' ? 'Receita' : 'Despesa', t.data.type === 'INCOME' ? 'success' : 'critical')),
-              h('td', {}, fmtMoney(t.data.amount)), h('td', {}, fmtDate(t.data.date)),
+            h('thead', {}, h('tr', {}, [h('th', {}, t('finance.colDescription')), h('th', {}, t('finance.colCategory')), h('th', {}, t('finance.colType')), h('th', {}, t('finance.colValue')), h('th', {}, t('finance.colDate'))])),
+            h('tbody', {}, sorted.map((tx) => h('tr', {}, [
+              h('td', {}, tx.data.description), h('td', {}, tx.data.category),
+              h('td', {}, badge(tx.data.type === 'INCOME' ? t('finance.incomeBadge') : t('finance.expenseBadge'), tx.data.type === 'INCOME' ? 'success' : 'critical')),
+              h('td', {}, fmtMoney(tx.data.amount)), h('td', {}, fmtDate(tx.data.date)),
             ]))),
           ]))
-          : emptyState({ icon: '📅', title: 'Nenhuma transação neste mês' }),
+          : emptyState({ icon: '📅', title: t('finance.noTransactionsMonth') }),
       ]));
     }
 
-    const fmtCompact = (v) => (v >= 1000 || v <= -1000) ? `${(v / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}k` : fmtMoney(v);
+    const fmtCompact = (v) => (v >= 1000 || v <= -1000) ? `${(v / 1000).toLocaleString(getLanguage() === 'en' ? 'en-US' : 'pt-BR', { maximumFractionDigits: 1 })}k` : fmtMoney(v);
     c.appendChild(h('div', { class: 'card' }, [
-      h('p', { class: 'muted' }, 'Clique em um mês (na barra ou no rótulo) para ver o detalhe de receitas e despesas.'),
-      h('div', { class: 'muted', style: 'font-size:12.5px;margin-top:8px' }, 'Receitas'),
+      h('p', { class: 'muted' }, t('finance.clickMonthHint')),
+      h('div', { class: 'muted', style: 'font-size:12.5px;margin-top:8px' }, t('finance.income')),
       barChart(breakdown.months.map((m) => ({ label: m.label, value: m.income, color: '#1a8a4a', onClick: () => renderMonthDetail(m) })), { height: 150, valueFmt: fmtCompact }),
-      h('div', { class: 'muted', style: 'font-size:12.5px;margin-top:10px' }, 'Despesas'),
+      h('div', { class: 'muted', style: 'font-size:12.5px;margin-top:10px' }, t('finance.expense')),
       barChart(breakdown.months.map((m) => ({ label: m.label, value: m.expense, color: '#c2273d', onClick: () => renderMonthDetail(m) })), { height: 150, valueFmt: fmtCompact }),
     ]));
     c.appendChild(monthDetailHost);
@@ -90,54 +91,54 @@ export async function render(container, ctx) {
   async function renderSpending(c) {
     clear(c);
     const s = await computeSpendingIntelligence();
-    c.appendChild(sectionTitle('📊 Despesas por categoria'));
-    c.appendChild(s.categories.length ? h('div', { class: 'card' }, barChart(s.categories, { valueFmt: (v) => fmtMoney(v) })) : emptyState({ icon: '📊', title: 'Sem despesas registradas' }));
-    c.appendChild(sectionTitle('🔁 Assinaturas e recorrentes'));
+    c.appendChild(sectionTitle(t('finance.byCategory')));
+    c.appendChild(s.categories.length ? h('div', { class: 'card' }, barChart(s.categories, { valueFmt: (v) => fmtMoney(v) })) : emptyState({ icon: '📊', title: t('finance.noExpenses') }));
+    c.appendChild(sectionTitle(t('finance.subscriptionsTitle')));
     c.appendChild(s.subscriptions.length ? h('div', { class: 'table-wrap' }, h('table', { class: 'data-table' }, [
-      h('thead', {}, h('tr', {}, [h('th', {}, 'Descrição'), h('th', {}, 'Valor'), h('th', {}, 'Categoria')])),
-      h('tbody', {}, s.subscriptions.map((t) => h('tr', {}, [h('td', {}, t.data.description), h('td', {}, fmtMoney(t.data.amount)), h('td', {}, t.data.category)]))),
-    ])) : emptyState({ icon: '🔁', title: 'Nenhuma assinatura/recorrente marcada' }));
-    c.appendChild(sectionTitle('⚠️ Fora do padrão'));
+      h('thead', {}, h('tr', {}, [h('th', {}, t('finance.colDescription')), h('th', {}, t('finance.colValue')), h('th', {}, t('finance.colCategory'))])),
+      h('tbody', {}, s.subscriptions.map((tx) => h('tr', {}, [h('td', {}, tx.data.description), h('td', {}, fmtMoney(tx.data.amount)), h('td', {}, tx.data.category)]))),
+    ])) : emptyState({ icon: '🔁', title: t('finance.noSubscriptions') }));
+    c.appendChild(sectionTitle(t('finance.outliersTitle')));
     c.appendChild(s.outliers.length ? h('div', { class: 'table-wrap' }, h('table', { class: 'data-table' }, [
-      h('thead', {}, h('tr', {}, [h('th', {}, 'Descrição'), h('th', {}, 'Valor'), h('th', {}, 'Data')])),
-      h('tbody', {}, s.outliers.map((t) => h('tr', {}, [h('td', {}, t.data.description), h('td', {}, fmtMoney(t.data.amount)), h('td', {}, fmtDate(t.data.date))]))),
-    ])) : emptyState({ icon: '✅', title: 'Nenhum gasto atípico detectado' }));
+      h('thead', {}, h('tr', {}, [h('th', {}, t('finance.colDescription')), h('th', {}, t('finance.colValue')), h('th', {}, t('finance.colDate'))])),
+      h('tbody', {}, s.outliers.map((tx) => h('tr', {}, [h('td', {}, tx.data.description), h('td', {}, fmtMoney(tx.data.amount)), h('td', {}, fmtDate(tx.data.date))]))),
+    ])) : emptyState({ icon: '✅', title: t('finance.noOutliers') }));
   }
 
   async function renderForecast(c) {
     clear(c);
     const f = await computeForecast();
-    c.appendChild(sectionTitle('📈 Projeção de saldo'));
+    c.appendChild(sectionTitle(t('finance.forecastTitle')));
     c.appendChild(h('div', { class: 'card' }, lineChart(f.series, { color: f.avgNet >= 0 ? '#1a8a4a' : '#c2273d' })));
     c.appendChild(h('div', { class: 'grid grid-3', style: 'margin-top:14px' }, [
-      statTile('3 meses', fmtMoney(f.projection3)),
-      statTile('6 meses', fmtMoney(f.projection6)),
-      statTile('12 meses', fmtMoney(f.projection12)),
+      statTile(t('finance.months3'), fmtMoney(f.projection3)),
+      statTile(t('finance.months6'), fmtMoney(f.projection6)),
+      statTile(t('finance.months12'), fmtMoney(f.projection12)),
     ]));
-    c.appendChild(h('p', { class: 'muted', style: 'margin-top:10px' }, `Baseado no resultado médio mensal de ${fmtMoney(f.avgNet)} (receitas - despesas).`));
+    c.appendChild(h('p', { class: 'muted', style: 'margin-top:10px' }, t('finance.avgBasedOn', { avg: fmtMoney(f.avgNet) })));
   }
 
   async function renderDecisionAgent(c) {
     clear(c);
-    c.appendChild(sectionTitle('🧭 Financial Decision Agent'));
-    c.appendChild(h('p', {}, 'Responda: "Posso fazer esta viagem?", "Posso comprar este produto?", "Posso assumir este financiamento?" — motor de regras local, pronto para IA futura.'));
-    const amountInput = h('input', { type: 'number', step: '0.01', placeholder: 'Valor (R$)' });
-    const descInput = h('input', { type: 'text', placeholder: 'Descrição (ex: viagem para Orlando)' });
+    c.appendChild(sectionTitle(t('finance.decisionTitle')));
+    c.appendChild(h('p', {}, t('finance.decisionDesc')));
+    const amountInput = h('input', { type: 'number', step: '0.01', placeholder: t('finance.amountPlaceholder') });
+    const descInput = h('input', { type: 'text', placeholder: t('finance.descPlaceholder') });
     const resultHost = h('div', { style: 'margin-top:14px' });
     const btn = h('button', { class: 'btn btn-primary', onClick: async () => {
       const amount = Number(amountInput.value);
       if (!amount || amount <= 0) return;
-      const result = await evaluateFinancialDecision({ amount, description: descInput.value || 'Gasto' });
+      const result = await evaluateFinancialDecision({ amount, description: descInput.value || t('finance.defaultExpenseDesc') });
       clear(resultHost);
       const sevMap = { OK: 'success', ATENCAO: 'warning', NAO_RECOMENDADO: 'critical' };
       resultHost.appendChild(h('div', { class: `insight-card ${result.verdict === 'OK' ? 'INFO' : result.verdict === 'ATENCAO' ? 'WARNING' : 'CRITICAL'}` }, [
-        h('div', { class: 'insight-title' }, [`Veredito: `, badge(result.verdict.replace('_', ' '), sevMap[result.verdict])]),
+        h('div', { class: 'insight-title' }, [`${t('finance.verdict')} `, badge(result.verdict.replace('_', ' '), sevMap[result.verdict])]),
         ...result.reasons.map((r) => h('div', { class: 'muted' }, r)),
-        h('div', { style: 'margin-top:6px' }, `Saldo atual: ${fmtMoney(result.currentBalance)} · Saldo após o gasto: ${fmtMoney(result.postBalance)} · Meta de reserva: ${fmtMoney(result.reserveTarget)}`),
+        h('div', { style: 'margin-top:6px' }, t('finance.resultSummary', { current: fmtMoney(result.currentBalance), post: fmtMoney(result.postBalance), reserve: fmtMoney(result.reserveTarget) })),
       ]));
-    } }, 'Analisar decisão');
+    } }, t('finance.analyzeBtn'));
     c.appendChild(h('div', { class: 'card' }, [
-      h('div', { class: 'form-row' }, [h('div', { class: 'form-field' }, [h('label', {}, 'Valor'), amountInput]), h('div', { class: 'form-field' }, [h('label', {}, 'Descrição'), descInput])]),
+      h('div', { class: 'form-row' }, [h('div', { class: 'form-field' }, [h('label', {}, t('finance.amountLabel')), amountInput]), h('div', { class: 'form-field' }, [h('label', {}, t('finance.descLabel')), descInput])]),
       btn,
     ]));
     c.appendChild(resultHost);
@@ -154,8 +155,8 @@ export async function render(container, ctx) {
     const connMeta = await connectorMetaRepository.get('pluma');
     c.appendChild(h('div', { class: 'card', style: 'margin-top:20px' }, [
       h('div', { class: 'flex-between' }, [
-        h('div', {}, [h('strong', {}, connMeta ? `Pluma: ${connMeta.status}` : 'Pluma: não conectado'), h('p', {}, `${connMeta?.totalRecordsImported || 0} transações importadas.`)]),
-        h('button', { class: 'btn', onClick: () => navigate('/admin-integrations') }, 'Gerenciar conector'),
+        h('div', {}, [h('strong', {}, connMeta ? t('finance.plumaConnected', { status: connMeta.status }) : t('finance.plumaNotConnected')), h('p', {}, t('finance.transactionsImported', { n: connMeta?.totalRecordsImported || 0 }))]),
+        h('button', { class: 'btn', onClick: () => navigate('/admin-integrations') }, t('finance.manageConnector')),
       ]),
     ]));
   }
@@ -163,66 +164,66 @@ export async function render(container, ctx) {
 
 function txConfig(user) {
   return {
-    entityType: 'finance.transaction', title: 'Transações', icon: '💳', user, permissionModule: 'finance', defaultVisibility: 'PRIVATE',
+    entityType: 'finance.transaction', title: t('finance.txCrudTitle'), icon: '💳', user, permissionModule: 'finance', defaultVisibility: 'PRIVATE',
     fields: [
-      { key: 'description', label: 'Descrição', required: true, full: true },
-      { key: 'type', label: 'Tipo', type: 'select', options: ['INCOME', 'EXPENSE'], required: true },
-      { key: 'amount', label: 'Valor', type: 'money', required: true },
-      { key: 'category', label: 'Categoria', required: true },
-      { key: 'account', label: 'Conta' },
-      { key: 'date', label: 'Data', type: 'date', required: true },
-      { key: 'recurring', label: 'Recorrente / assinatura', type: 'checkbox' },
+      { key: 'description', label: t('finance.colDescription'), required: true, full: true },
+      { key: 'type', label: t('finance.colType'), type: 'select', options: ['INCOME', 'EXPENSE'], required: true },
+      { key: 'amount', label: t('finance.colValue'), type: 'money', required: true },
+      { key: 'category', label: t('finance.colCategory'), required: true },
+      { key: 'account', label: t('finance.fieldAccount') },
+      { key: 'date', label: t('finance.colDate'), type: 'date', required: true },
+      { key: 'recurring', label: t('finance.fieldRecurring'), type: 'checkbox' },
     ],
     columns: [
-      { key: 'description', label: 'Descrição' }, { key: 'category', label: 'Categoria' },
-      { key: 'type', label: 'Tipo', render: (r) => badge(r.type === 'INCOME' ? 'Receita' : 'Despesa', r.type === 'INCOME' ? 'success' : 'critical') },
-      { key: 'amount', label: 'Valor', render: (r) => fmtMoney(r.amount) }, { key: 'date', label: 'Data', render: (r) => fmtDate(r.date) },
+      { key: 'description', label: t('finance.colDescription') }, { key: 'category', label: t('finance.colCategory') },
+      { key: 'type', label: t('finance.colType'), render: (r) => badge(r.type === 'INCOME' ? t('finance.incomeBadge') : t('finance.expenseBadge'), r.type === 'INCOME' ? 'success' : 'critical') },
+      { key: 'amount', label: t('finance.colValue'), render: (r) => fmtMoney(r.amount) }, { key: 'date', label: t('finance.colDate'), render: (r) => fmtDate(r.date) },
     ],
     sortBy: (a, b) => (b.date || '').localeCompare(a.date || ''),
-    emptyTitle: 'Nenhuma transação registrada',
+    emptyTitle: t('finance.emptyTransactions'),
   };
 }
 
 function goalsConfig(user) {
   return {
-    entityType: 'finance.goal', title: 'Metas Financeiras', icon: '🎯', user, permissionModule: 'finance', defaultVisibility: 'FAMILY',
+    entityType: 'finance.goal', title: t('finance.goalsCrudTitle'), icon: '🎯', user, permissionModule: 'finance', defaultVisibility: 'FAMILY',
     fields: [
-      { key: 'name', label: 'Nome', required: true },
-      { key: 'category', label: 'Categoria', type: 'select', options: ['RESERVA', 'IMOVEL', 'CARRO', 'VIAGEM', 'EDUCACAO', 'INVESTIMENTOS'], required: true },
-      { key: 'targetAmount', label: 'Valor alvo', type: 'money', required: true },
-      { key: 'currentAmount', label: 'Valor atual', type: 'money' },
-      { key: 'targetDate', label: 'Prazo', type: 'date' },
+      { key: 'name', label: t('finance.fieldName'), required: true },
+      { key: 'category', label: t('finance.colCategory'), type: 'select', options: ['RESERVA', 'IMOVEL', 'CARRO', 'VIAGEM', 'EDUCACAO', 'INVESTIMENTOS'], required: true },
+      { key: 'targetAmount', label: t('finance.fieldTargetAmount'), type: 'money', required: true },
+      { key: 'currentAmount', label: t('finance.fieldCurrentAmount'), type: 'money' },
+      { key: 'targetDate', label: t('finance.fieldTargetDate'), type: 'date' },
     ],
     columns: [
-      { key: 'name', label: 'Nome' }, { key: 'category', label: 'Categoria', render: (r) => badge(r.category, 'neutral') },
-      { key: 'currentAmount', label: 'Atual', render: (r) => fmtMoney(r.currentAmount) }, { key: 'targetAmount', label: 'Alvo', render: (r) => fmtMoney(r.targetAmount) },
+      { key: 'name', label: t('finance.fieldName') }, { key: 'category', label: t('finance.colCategory'), render: (r) => badge(r.category, 'neutral') },
+      { key: 'currentAmount', label: t('finance.colCurrent'), render: (r) => fmtMoney(r.currentAmount) }, { key: 'targetAmount', label: t('finance.colTarget'), render: (r) => fmtMoney(r.targetAmount) },
     ],
-    emptyTitle: 'Nenhuma meta cadastrada',
+    emptyTitle: t('finance.noGoals'),
   };
 }
 
 function debtsConfig(user) {
   return {
-    entityType: 'finance.debt', title: 'Dívidas', icon: '📉', user, permissionModule: 'finance', defaultVisibility: 'PRIVATE',
+    entityType: 'finance.debt', title: t('finance.debtsCrudTitle'), icon: '📉', user, permissionModule: 'finance', defaultVisibility: 'PRIVATE',
     fields: [
-      { key: 'name', label: 'Nome', required: true }, { key: 'totalAmount', label: 'Valor total', type: 'money' },
-      { key: 'remainingAmount', label: 'Saldo devedor', type: 'money', required: true },
-      { key: 'monthlyPayment', label: 'Parcela mensal', type: 'money' }, { key: 'dueDate', label: 'Vencimento', type: 'date' },
+      { key: 'name', label: t('finance.fieldName'), required: true }, { key: 'totalAmount', label: t('finance.fieldTotalAmount'), type: 'money' },
+      { key: 'remainingAmount', label: t('finance.fieldRemainingAmount'), type: 'money', required: true },
+      { key: 'monthlyPayment', label: t('finance.fieldMonthlyPayment'), type: 'money' }, { key: 'dueDate', label: t('finance.fieldDueDate'), type: 'date' },
     ],
-    columns: [{ key: 'name', label: 'Nome' }, { key: 'remainingAmount', label: 'Saldo devedor', render: (r) => fmtMoney(r.remainingAmount) }, { key: 'monthlyPayment', label: 'Parcela', render: (r) => fmtMoney(r.monthlyPayment) }],
-    emptyTitle: 'Nenhuma dívida cadastrada',
+    columns: [{ key: 'name', label: t('finance.fieldName') }, { key: 'remainingAmount', label: t('finance.colRemaining'), render: (r) => fmtMoney(r.remainingAmount) }, { key: 'monthlyPayment', label: t('finance.colInstallment'), render: (r) => fmtMoney(r.monthlyPayment) }],
+    emptyTitle: t('finance.emptyDebts'),
   };
 }
 
 function investmentsConfig(user) {
   return {
-    entityType: 'finance.investment', title: 'Investimentos', icon: '📈', user, permissionModule: 'finance', defaultVisibility: 'PRIVATE',
+    entityType: 'finance.investment', title: t('finance.investCrudTitle'), icon: '📈', user, permissionModule: 'finance', defaultVisibility: 'PRIVATE',
     fields: [
-      { key: 'name', label: 'Nome', required: true }, { key: 'type', label: 'Tipo', type: 'select', options: ['RENDA_FIXA', 'RENDA_VARIAVEL', 'FUNDO', 'PREVIDENCIA', 'CRIPTO', 'OUTRO'] },
-      { key: 'amount', label: 'Valor aplicado', type: 'money', required: true }, { key: 'date', label: 'Data', type: 'date' },
+      { key: 'name', label: t('finance.fieldName'), required: true }, { key: 'type', label: t('finance.fieldInvestType'), type: 'select', options: ['RENDA_FIXA', 'RENDA_VARIAVEL', 'FUNDO', 'PREVIDENCIA', 'CRIPTO', 'OUTRO'] },
+      { key: 'amount', label: t('finance.fieldAmountApplied'), type: 'money', required: true }, { key: 'date', label: t('finance.colDate'), type: 'date' },
     ],
-    columns: [{ key: 'name', label: 'Nome' }, { key: 'type', label: 'Tipo', render: (r) => badge(r.type, 'neutral') }, { key: 'amount', label: 'Valor', render: (r) => fmtMoney(r.amount) }],
-    emptyTitle: 'Nenhum investimento cadastrado',
+    columns: [{ key: 'name', label: t('finance.fieldName') }, { key: 'type', label: t('finance.fieldInvestType'), render: (r) => badge(r.type, 'neutral') }, { key: 'amount', label: t('finance.colValue'), render: (r) => fmtMoney(r.amount) }],
+    emptyTitle: t('finance.emptyInvestments'),
   };
 }
 

@@ -4,134 +4,135 @@ import { renderEntityCrud } from '../core/entityModuleEngine.js';
 import { registerSeeder } from '../core/seed/seedData.js';
 import { fmtDate } from '../ui/dom.js';
 import { badge, sectionTitle } from '../ui/components/misc.js';
+import { t } from '../core/i18n.js';
 
 const STATUS_OPTS = ['PLANEJADO', 'EM_ANDAMENTO', 'CONCLUIDO', 'CANCELADO'];
 
 export async function render(container, ctx) {
   const { user, subview } = ctx;
   clear(container);
-  container.appendChild(h('h1', {}, '👨‍👩‍👧‍👦 Família'));
-  container.appendChild(h('p', {}, 'Casal, filhos, pais/mãe e casa — tudo em um só lugar, com visibilidade compartilhada entre Dielly e a esposa.'));
+  container.appendChild(h('h1', {}, t('family.title')));
+  container.appendChild(h('p', {}, t('family.subtitle')));
 
   const tabs = [
-    { key: 'spouse', label: 'Esposo(a) / Casal', render: (c) => renderEntityCrud(c, spouseConfig(user)) },
-    { key: 'children', label: 'Filhos', render: (c) => renderEntityCrud(c, childrenConfig(user)) },
-    { key: 'events', label: 'Compromissos dos filhos', render: (c) => renderEntityCrud(c, childEventsConfig(user)) },
-    { key: 'parents', label: 'Pais / Mãe', render: (c) => renderEntityCrud(c, parentsConfig(user)) },
-    { key: 'home', label: 'Casa', render: (c) => renderEntityCrud(c, homeConfig(user)) },
+    { key: 'spouse', label: t('family.tabSpouse'), render: (c) => renderEntityCrud(c, spouseConfig(user)) },
+    { key: 'children', label: t('family.tabChildren'), render: (c) => renderEntityCrud(c, childrenConfig(user)) },
+    { key: 'events', label: t('family.tabEvents'), render: (c) => renderEntityCrud(c, childEventsConfig(user)) },
+    { key: 'parents', label: t('family.tabParents'), render: (c) => renderEntityCrud(c, parentsConfig(user)) },
+    { key: 'home', label: t('family.tabHome'), render: (c) => renderEntityCrud(c, homeConfig(user)) },
   ];
   container.appendChild(renderTabs(tabs, subview));
 }
 
 function spouseConfig(user) {
   return {
-    entityType: 'family.spouse', title: 'Planejamento do Casal', icon: '💑', user, permissionModule: 'family',
+    entityType: 'family.spouse', title: t('family.spouseCrudTitle'), icon: '💑', user, permissionModule: 'family',
     defaultVisibility: 'FAMILY',
     fields: [
-      { key: 'title', label: 'Título', required: true, full: true },
-      { key: 'type', label: 'Tipo', type: 'select', options: ['COMPROMISSO', 'DATA_ESPECIAL', 'ATIVIDADE', 'DECISAO', 'OBJETIVO'], required: true },
-      { key: 'date', label: 'Data', type: 'date' },
-      { key: 'status', label: 'Status', type: 'select', options: STATUS_OPTS, default: 'PLANEJADO' },
-      { key: 'notes', label: 'Notas', type: 'textarea', full: true },
+      { key: 'title', label: t('family.fieldTitle'), required: true, full: true },
+      { key: 'type', label: t('family.fieldType'), type: 'select', options: ['COMPROMISSO', 'DATA_ESPECIAL', 'ATIVIDADE', 'DECISAO', 'OBJETIVO'], required: true },
+      { key: 'date', label: t('family.fieldDate'), type: 'date' },
+      { key: 'status', label: t('family.fieldStatus'), type: 'select', options: STATUS_OPTS, default: 'PLANEJADO' },
+      { key: 'notes', label: t('family.fieldNotes'), type: 'textarea', full: true },
     ],
     columns: [
-      { key: 'title', label: 'Título' },
-      { key: 'type', label: 'Tipo', render: (r) => badge(r.type, 'neutral') },
-      { key: 'date', label: 'Data', render: (r) => fmtDate(r.date) },
-      { key: 'status', label: 'Status', render: (r) => badge(r.status, r.status === 'CONCLUIDO' ? 'success' : 'neutral') },
+      { key: 'title', label: t('family.fieldTitle') },
+      { key: 'type', label: t('family.fieldType'), render: (r) => badge(r.type, 'neutral') },
+      { key: 'date', label: t('family.fieldDate'), render: (r) => fmtDate(r.date) },
+      { key: 'status', label: t('family.fieldStatus'), render: (r) => badge(r.status, r.status === 'CONCLUIDO' ? 'success' : 'neutral') },
     ],
-    emptyTitle: 'Nenhum item de planejamento do casal', emptyMessage: 'Registre compromissos, datas especiais e objetivos do casal.',
+    emptyTitle: t('family.emptySpouse'), emptyMessage: t('family.emptySpouseMsg'),
   };
 }
 
 function childrenConfig(user) {
   return {
-    entityType: 'family.child', title: 'Filhos', icon: '🧒', user, permissionModule: 'family',
+    entityType: 'family.child', title: t('family.childrenCrudTitle'), icon: '🧒', user, permissionModule: 'family',
     defaultVisibility: 'FAMILY',
     fields: [
-      { key: 'name', label: 'Nome', required: true },
-      { key: 'birthDate', label: 'Data de nascimento', type: 'date' },
-      { key: 'school', label: 'Escola' },
-      { key: 'grade', label: 'Série/Turma' },
-      { key: 'healthNotes', label: 'Saúde (administrativo)', type: 'textarea' },
-      { key: 'developmentNotes', label: 'Desenvolvimento', type: 'textarea' },
-      { key: 'documents', label: 'Documentos', type: 'textarea', hint: 'RG, CPF, cartão de vacina, etc.' },
-      { key: 'observations', label: 'Observações', type: 'textarea', full: true },
+      { key: 'name', label: t('family.fieldName'), required: true },
+      { key: 'birthDate', label: t('family.fieldBirthDate'), type: 'date' },
+      { key: 'school', label: t('family.fieldSchool') },
+      { key: 'grade', label: t('family.fieldGrade') },
+      { key: 'healthNotes', label: t('family.fieldHealthNotes'), type: 'textarea' },
+      { key: 'developmentNotes', label: t('family.fieldDevelopmentNotes'), type: 'textarea' },
+      { key: 'documents', label: t('family.fieldDocuments'), type: 'textarea', hint: t('family.fieldDocumentsHint') },
+      { key: 'observations', label: t('family.fieldObservations'), type: 'textarea', full: true },
     ],
     columns: [
-      { key: 'name', label: 'Nome' },
-      { key: 'birthDate', label: 'Nascimento', render: (r) => fmtDate(r.birthDate) },
-      { key: 'school', label: 'Escola' },
-      { key: 'grade', label: 'Série' },
+      { key: 'name', label: t('family.fieldName') },
+      { key: 'birthDate', label: t('family.colBirth'), render: (r) => fmtDate(r.birthDate) },
+      { key: 'school', label: t('family.fieldSchool') },
+      { key: 'grade', label: t('family.colGrade') },
     ],
-    emptyTitle: 'Nenhum filho cadastrado', emptyMessage: 'Cadastre seus filhos para acompanhar escola, saúde, desenvolvimento e documentos.',
+    emptyTitle: t('family.emptyChildren'), emptyMessage: t('family.emptyChildrenMsg'),
   };
 }
 
 function childEventsConfig(user) {
   return {
-    entityType: 'family.childEvent', title: 'Compromissos e Atividades dos Filhos', icon: '🎒', user, permissionModule: 'family',
+    entityType: 'family.childEvent', title: t('family.eventsCrudTitle'), icon: '🎒', user, permissionModule: 'family',
     defaultVisibility: 'FAMILY',
     fields: [
-      { key: 'childName', label: 'Filho(a)', required: true },
-      { key: 'title', label: 'Título', required: true },
-      { key: 'type', label: 'Tipo', type: 'select', options: ['COMPROMISSO', 'ATIVIDADE', 'SAUDE', 'DOCUMENTO', 'TEMPO_DE_QUALIDADE'], required: true },
-      { key: 'date', label: 'Data', type: 'date', required: true },
-      { key: 'notes', label: 'Notas', type: 'textarea', full: true },
+      { key: 'childName', label: t('family.fieldChildName'), required: true },
+      { key: 'title', label: t('family.fieldTitle'), required: true },
+      { key: 'type', label: t('family.fieldType'), type: 'select', options: ['COMPROMISSO', 'ATIVIDADE', 'SAUDE', 'DOCUMENTO', 'TEMPO_DE_QUALIDADE'], required: true },
+      { key: 'date', label: t('family.fieldDate'), type: 'date', required: true },
+      { key: 'notes', label: t('family.fieldNotes'), type: 'textarea', full: true },
     ],
     columns: [
-      { key: 'childName', label: 'Filho(a)' },
-      { key: 'title', label: 'Título' },
-      { key: 'type', label: 'Tipo', render: (r) => badge(r.type, 'neutral') },
-      { key: 'date', label: 'Data', render: (r) => fmtDate(r.date) },
+      { key: 'childName', label: t('family.fieldChildName') },
+      { key: 'title', label: t('family.fieldTitle') },
+      { key: 'type', label: t('family.fieldType'), render: (r) => badge(r.type, 'neutral') },
+      { key: 'date', label: t('family.fieldDate'), render: (r) => fmtDate(r.date) },
     ],
     sortBy: (a, b) => (a.date || '').localeCompare(b.date || ''),
-    emptyTitle: 'Nenhum compromisso registrado', emptyMessage: 'Registre compromissos escolares, atividades e tempo de qualidade.',
+    emptyTitle: t('family.emptyEvents'), emptyMessage: t('family.emptyEventsMsg'),
   };
 }
 
 function parentsConfig(user) {
   return {
-    entityType: 'family.parentCare', title: 'Pais / Mãe', icon: '🧓', user, permissionModule: 'family',
+    entityType: 'family.parentCare', title: t('family.parentsCrudTitle'), icon: '🧓', user, permissionModule: 'family',
     defaultVisibility: 'PRIVATE',
     fields: [
-      { key: 'title', label: 'Título', required: true, full: true },
-      { key: 'type', label: 'Tipo', type: 'select', options: ['COMPROMISSO', 'NECESSIDADE', 'ACOMPANHAMENTO', 'DOCUMENTO', 'DECISAO'], required: true },
-      { key: 'date', label: 'Data', type: 'date' },
-      { key: 'status', label: 'Status', type: 'select', options: STATUS_OPTS, default: 'PLANEJADO' },
-      { key: 'notes', label: 'Notas', type: 'textarea', full: true },
+      { key: 'title', label: t('family.fieldTitle'), required: true, full: true },
+      { key: 'type', label: t('family.fieldType'), type: 'select', options: ['COMPROMISSO', 'NECESSIDADE', 'ACOMPANHAMENTO', 'DOCUMENTO', 'DECISAO'], required: true },
+      { key: 'date', label: t('family.fieldDate'), type: 'date' },
+      { key: 'status', label: t('family.fieldStatus'), type: 'select', options: STATUS_OPTS, default: 'PLANEJADO' },
+      { key: 'notes', label: t('family.fieldNotes'), type: 'textarea', full: true },
     ],
     columns: [
-      { key: 'title', label: 'Título' },
-      { key: 'type', label: 'Tipo', render: (r) => badge(r.type, 'neutral') },
-      { key: 'date', label: 'Data', render: (r) => fmtDate(r.date) },
-      { key: 'status', label: 'Status', render: (r) => badge(r.status, r.status === 'CONCLUIDO' ? 'success' : 'neutral') },
+      { key: 'title', label: t('family.fieldTitle') },
+      { key: 'type', label: t('family.fieldType'), render: (r) => badge(r.type, 'neutral') },
+      { key: 'date', label: t('family.fieldDate'), render: (r) => fmtDate(r.date) },
+      { key: 'status', label: t('family.fieldStatus'), render: (r) => badge(r.status, r.status === 'CONCLUIDO' ? 'success' : 'neutral') },
     ],
-    emptyTitle: 'Nada registrado ainda', emptyMessage: 'Acompanhe compromissos e necessidades relacionadas aos seus pais/mãe.',
+    emptyTitle: t('family.emptyParents'), emptyMessage: t('family.emptyParentsMsg'),
   };
 }
 
 function homeConfig(user) {
   return {
-    entityType: 'family.home', title: 'Casa', icon: '🏡', user, permissionModule: 'family',
+    entityType: 'family.home', title: t('family.homeCrudTitle'), icon: '🏡', user, permissionModule: 'family',
     defaultVisibility: 'FAMILY',
     fields: [
-      { key: 'title', label: 'Título', required: true, full: true },
-      { key: 'category', label: 'Categoria', type: 'select', options: ['MANUTENCAO', 'COMPRAS', 'DOCUMENTOS', 'CONTAS', 'REPAROS', 'RESPONSABILIDADES'], required: true },
-      { key: 'responsible', label: 'Responsável', type: 'select', options: ['DIELLY', 'ESPOSA', 'AMBOS'], default: 'AMBOS' },
-      { key: 'dueDate', label: 'Prazo', type: 'date' },
-      { key: 'cost', label: 'Custo estimado', type: 'money' },
-      { key: 'status', label: 'Status', type: 'select', options: STATUS_OPTS, default: 'PLANEJADO' },
-      { key: 'notes', label: 'Notas', type: 'textarea', full: true },
+      { key: 'title', label: t('family.fieldTitle'), required: true, full: true },
+      { key: 'category', label: t('family.fieldCategory'), type: 'select', options: ['MANUTENCAO', 'COMPRAS', 'DOCUMENTOS', 'CONTAS', 'REPAROS', 'RESPONSABILIDADES'], required: true },
+      { key: 'responsible', label: t('family.fieldResponsible'), type: 'select', options: ['DIELLY', 'ESPOSA', 'AMBOS'], default: 'AMBOS' },
+      { key: 'dueDate', label: t('family.fieldDueDate'), type: 'date' },
+      { key: 'cost', label: t('family.fieldCost'), type: 'money' },
+      { key: 'status', label: t('family.fieldStatus'), type: 'select', options: STATUS_OPTS, default: 'PLANEJADO' },
+      { key: 'notes', label: t('family.fieldNotes'), type: 'textarea', full: true },
     ],
     columns: [
-      { key: 'title', label: 'Título' },
-      { key: 'category', label: 'Categoria', render: (r) => badge(r.category, 'neutral') },
-      { key: 'responsible', label: 'Responsável' },
-      { key: 'dueDate', label: 'Prazo', render: (r) => fmtDate(r.dueDate) },
-      { key: 'status', label: 'Status', render: (r) => badge(r.status, r.status === 'CONCLUIDO' ? 'success' : 'neutral') },
+      { key: 'title', label: t('family.fieldTitle') },
+      { key: 'category', label: t('family.fieldCategory'), render: (r) => badge(r.category, 'neutral') },
+      { key: 'responsible', label: t('family.fieldResponsible') },
+      { key: 'dueDate', label: t('family.fieldDueDate'), render: (r) => fmtDate(r.dueDate) },
+      { key: 'status', label: t('family.fieldStatus'), render: (r) => badge(r.status, r.status === 'CONCLUIDO' ? 'success' : 'neutral') },
     ],
-    emptyTitle: 'Nenhuma tarefa da casa', emptyMessage: 'Manutenção, compras, documentos e contas da casa.',
+    emptyTitle: t('family.emptyHome'), emptyMessage: t('family.emptyHomeMsg'),
   };
 }
 
