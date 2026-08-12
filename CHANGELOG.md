@@ -8,6 +8,14 @@ All notable changes to this project are documented in this file. Format based on
 
 Nothing yet.
 
+## [1.14.1] — 2026-08-12
+
+### Changed
+
+- Dashboards' bimestre/semestre comparison bars now put "Anterior"
+  (previous) on the left and "Atual" (current) on the right, matching
+  reading order (older → newer). Legend order swapped to match.
+
 ## [1.14.0] — 2026-08-12
 
 ### Added

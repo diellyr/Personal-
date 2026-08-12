@@ -1,6 +1,6 @@
 # Version
 
-**Current version: `1.14.0`** — released 2026-08-12
+**Current version: `1.14.1`** — released 2026-08-12
 
 ## Versioning policy
 
@@ -52,6 +52,7 @@ without the schema version changing, and vice versa. See `docs/DATABASE.md`.
 
 | Version | Date | Highlights |
 |---|---|---|
+| `1.14.1` | 2026-08-12 | Dashboards' bimestre/semestre comparison bars: swapped order so "Anterior" is on the left and "Atual" on the right. See `CHANGELOG.md`. |
 | `1.14.0` | 2026-08-12 | Dashboards' Acompanha+ School card: choose which student(s) appear (persisted), and grades now show as thin bimester/semester comparison bars instead of text rows. Fixed a bug where "Importar dataset demo" imports weren't tagged for "Excluir dados demo" to find. See `CHANGELOG.md`. |
 | `1.13.1` | 2026-08-12 | Birthday listings (Command Center, Dashboards, Church) now show each person's city, not just their name. See `CHANGELOG.md`. |
 | `1.13.0` | 2026-08-12 | Portal Expansão youth birthdays (today/this week) now surface in Command Center's agenda and get a dedicated highlight on the Dashboards card, instead of only living inside the Church module. See `CHANGELOG.md`. |

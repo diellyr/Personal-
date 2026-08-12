@@ -191,15 +191,15 @@ async function acompanhaCard(user) {
     }
     if (gradeRows.length) {
       parts.push(h('div', { class: 'muted', style: 'font-size:12px;margin-bottom:4px' }, t('dashboards.gradesCurrentVsPrevious')));
-      parts.push(h('div', { class: 'flex gap-8', style: 'font-size:11px;margin-bottom:6px' }, [legendDot('#2952e3', t('dashboards.current')), legendDot('#94a3b8', t('dashboards.previous'))]));
+      parts.push(h('div', { class: 'flex gap-8', style: 'font-size:11px;margin-bottom:6px' }, [legendDot('#94a3b8', t('dashboards.previous')), legendDot('#2952e3', t('dashboards.current'))]));
       gradeRows.forEach((r) => {
         const groups = [
-          { label: t('dashboards.bimester'), values: [r.bimester.currentAvg, r.bimester.previousAvg] },
-          { label: t('dashboards.semester'), values: [r.semester.currentAvg, r.semester.previousAvg] },
+          { label: t('dashboards.bimester'), values: [r.bimester.previousAvg, r.bimester.currentAvg] },
+          { label: t('dashboards.semester'), values: [r.semester.previousAvg, r.semester.currentAvg] },
         ];
         parts.push(h('div', { style: 'margin-bottom:10px' }, [
           h('div', { class: 'flex-between', style: 'font-size:12.5px' }, [h('strong', {}, r.child), deltaBadge(r.bimester.currentAvg, r.bimester.previousAvg)]),
-          groupedBarChart(groups, ['current', 'previous'], { height: 90, colors: ['#2952e3', '#94a3b8'], valueFmt: (v) => (v === null || v === undefined ? '' : v.toFixed(1)) }),
+          groupedBarChart(groups, ['previous', 'current'], { height: 90, colors: ['#94a3b8', '#2952e3'], valueFmt: (v) => (v === null || v === undefined ? '' : v.toFixed(1)) }),
         ]));
       });
     }
