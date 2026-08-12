@@ -1,5 +1,5 @@
 import { h, clear, fmtDate } from '../ui/dom.js';
-import { todayIso, daysBetween, startOfWeek, startOfMonth } from '../core/dateUtils.js';
+import { todayIso, daysBetween, startOfWeek, startOfMonth, addDays } from '../core/dateUtils.js';
 import { listOpenTasks, listOverdueTasks } from '../core/tasks.js';
 import { EntityRepository } from '../core/entityRepository.js';
 import { canViewResource } from '../core/permissions.js';
@@ -8,11 +8,21 @@ import { generateCrossModuleInsights } from '../core/ai/crossModuleInsights.js';
 import { severityBadge, statTile, sectionTitle, badge } from '../ui/components/misc.js';
 import { navigate } from '../core/router.js';
 import { t, getLanguage } from '../core/i18n.js';
+import { computeExpansionIntelligence } from '../core/expansionIntelligence.js';
 
 async function safeFindAll(entityType, user) {
   try {
     const all = await new EntityRepository(entityType).findAll();
     return user ? all.filter((r) => canViewResource(user, r)) : all;
+  } catch {
+    return [];
+  }
+}
+
+async function safeExpansionBirthdays(user) {
+  try {
+    const intel = await computeExpansionIntelligence(user);
+    return intel.upcomingBirthdays || [];
   } catch {
     return [];
   }
@@ -48,7 +58,7 @@ export async function render(container, ctx) {
     const rangeDays = RANGE_DAYS[state.range];
     const inRange = (dateStr) => dateStr && daysBetween(today, dateStr) >= (state.range === 'HOJE' ? -0 : -rangeDays + 1) && daysBetween(today, dateStr) <= rangeDays - (state.range === 'HOJE' ? 0 : 0) && daysBetween(today, dateStr) >= 0 && daysBetween(today, dateStr) < rangeDays;
 
-    const [openTasks, overdue, notifsSources, familyChildren, churchAgenda, jobInterviews, trips, financeTx, englishSessions, studies, decisions] = await Promise.all([
+    const [openTasks, overdue, notifsSources, familyChildren, churchAgenda, jobInterviews, trips, financeTx, englishSessions, studies, decisions, expansionBirthdays] = await Promise.all([
       listOpenTasks(), listOverdueTasks(),
       Promise.resolve([]),
       safeFindAll('family.child', user),
@@ -59,6 +69,7 @@ export async function render(container, ctx) {
       safeFindAll('english.session', user),
       safeFindAll('studies.item', user),
       safeFindAll('decisions.decision', user),
+      safeExpansionBirthdays(user),
     ]);
 
     const priorityScore = (tk) => ({ CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 }[tk.priority] || 2) + (tk.dueDate && tk.dueDate <= today ? 5 : 0);
@@ -89,6 +100,7 @@ export async function render(container, ctx) {
       ...churchAgenda.filter((a) => inRange(a.data.date)).map((a) => ({ date: a.data.date, title: a.data.title, source: 'Church', module: 'church' })),
       ...jobInterviews.filter((i) => inRange(i.data.date)).map((i) => ({ date: i.data.date, title: t('cc.interview', { company: i.data.company || '' }), source: 'Job Hunter', module: 'jobs' })),
       ...trips.filter((tr) => inRange(tr.data.startDate)).map((tr) => ({ date: tr.data.startDate, title: t('cc.trip', { destination: tr.data.destination }), source: 'Travel', module: 'hobbies-travel' })),
+      ...expansionBirthdays.filter((b) => b.daysUntil < rangeDays).map((b) => ({ date: addDays(today, b.daysUntil), title: t('cc.birthday', { name: b.name }), source: 'Youth', module: 'church/expansion-youth' })),
     ].sort((a, b) => (a.date < b.date ? -1 : 1));
     root.appendChild(agendaItems.length
       ? h('div', { class: 'table-wrap' }, h('table', { class: 'data-table' }, [

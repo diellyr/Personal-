@@ -8,6 +8,25 @@ All notable changes to this project are documented in this file. Format based on
 
 Nothing yet.
 
+## [1.13.0] — 2026-08-12
+
+### Added
+
+- **Portal Expansão youth birthdays now surface outside the Church module.**
+  `js/modules/commandCenter.js`: the Agenda list (Hoje/Semana/Mês tabs)
+  now includes upcoming birthdays from `church.expansionYouth`
+  (`computeExpansionIntelligence()`'s `upcomingBirthdays`, already
+  computed with `daysUntil`), filtered to the selected range the same way
+  tasks/church agenda/interviews/trips already are — wrapped in a
+  try/catch fallback so a user without church data or view permission
+  just sees an empty list, not a broken screen.
+- `js/modules/dashboardsModule.js`'s "Portal Expansão — Jovens" card
+  replaces the old flat "N aniversariantes nos próximos 30 dias" line
+  with three tiers: **today's birthdays by name** (bold, only shown when
+  there are any), a **this-week count**, and the existing **30-day
+  count** — so a leader glancing at the dashboard sees who to greet today
+  without opening the Church module.
+
 ## [1.12.0] — 2026-08-12
 
 ### Added

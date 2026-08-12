@@ -1,6 +1,6 @@
 # Version
 
-**Current version: `1.12.0`** — released 2026-08-12
+**Current version: `1.13.0`** — released 2026-08-12
 
 ## Versioning policy
 
@@ -52,6 +52,7 @@ without the schema version changing, and vice versa. See `docs/DATABASE.md`.
 
 | Version | Date | Highlights |
 |---|---|---|
+| `1.13.0` | 2026-08-12 | Portal Expansão youth birthdays (today/this week) now surface in Command Center's agenda and get a dedicated highlight on the Dashboards card, instead of only living inside the Church module. See `CHANGELOG.md`. |
 | `1.12.0` | 2026-08-12 | English/Portuguese language toggle (login screen + header). Translates app chrome, the shared CRUD engine, and Command Center, Finance, Family, Church, and Dashboards in full — remaining modules still Portuguese-only, tracked as follow-up. See `CHANGELOG.md`. |
 | `1.11.1` | 2026-08-11 | Clicking a notification now opens its module, not just marks it read. See `CHANGELOG.md`. |
 | `1.11.0` | 2026-08-11 | Church gets a "Jovens (Expansão)" tab: import a full Portal Expansão backup and see a youth-ministry census — distribution by city/congregação/função/estado civil/pastor, water/Holy-Spirit baptism coverage with a follow-up list, and upcoming birthdays. Dashboards gets a matching card. See `CHANGELOG.md`. |

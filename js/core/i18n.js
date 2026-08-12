@@ -116,6 +116,7 @@ const DICTIONARIES = {
     'cc.trip': 'Viagem — {destination}',
     'cc.aiInsights': '🤖 AI Chief of Staff — principais insights',
     'cc.viewAll': 'Ver todos →',
+    'cc.birthday': '🎂 Aniversário — {name}',
 
     // Finance module
     'finance.title': '💰 Financeiro',
@@ -413,6 +414,8 @@ const DICTIONARIES = {
     'dashboards.waterBaptized': 'Batizados em água',
     'dashboards.upcomingBirthdaysCount': '🎂 {n} aniversariante(s) nos próximos 30 dias.',
     'dashboards.noBirthdaysSoon': 'Nenhum aniversário nos próximos 30 dias.',
+    'dashboards.birthdaysTodayNames': '🎉 Hoje: {names}',
+    'dashboards.birthdaysWeekCount': '📅 {n} aniversariante(s) essa semana.',
   },
   en: {
     'login.subtitle': 'Personal+ — your personal operating system',
@@ -488,6 +491,7 @@ const DICTIONARIES = {
     'cc.trip': 'Trip — {destination}',
     'cc.aiInsights': '🤖 AI Chief of Staff — top insights',
     'cc.viewAll': 'View all →',
+    'cc.birthday': '🎂 Birthday — {name}',
 
     // Finance module
     'finance.title': '💰 Finance',
@@ -785,5 +789,7 @@ const DICTIONARIES = {
     'dashboards.waterBaptized': 'Baptized in water',
     'dashboards.upcomingBirthdaysCount': '🎂 {n} birthday(s) in the next 30 days.',
     'dashboards.noBirthdaysSoon': 'No birthdays in the next 30 days.',
+    'dashboards.birthdaysTodayNames': '🎉 Today: {names}',
+    'dashboards.birthdaysWeekCount': '📅 {n} birthday(s) this week.',
   },
 };

@@ -201,10 +201,19 @@ async function expansionYouthCard(user) {
         statTile(t('dashboards.waterBaptized'), `${intel.waterBaptism.pct}%`, null, intel.waterBaptism.pct >= 70 ? 'success' : intel.waterBaptism.pct >= 40 ? 'info' : 'critical'),
       ]),
       intel.byCity.length ? barChart(intel.byCity.slice(0, 6), { height: 130 }) : null,
-      intel.upcomingBirthdays.length
-        ? h('div', { class: 'muted', style: 'margin-top:6px' }, t('dashboards.upcomingBirthdaysCount', { n: intel.upcomingBirthdays.length }))
-        : h('div', { class: 'muted', style: 'margin-top:6px' }, t('dashboards.noBirthdaysSoon')),
+      birthdaysBlock(intel.upcomingBirthdays),
     ]);
   }
   return cardShell(t('dashboards.expansionYouthCardTitle'), 'church/expansion-youth', body, { clickable: true });
+}
+
+function birthdaysBlock(upcomingBirthdays) {
+  const todayBirthdays = upcomingBirthdays.filter((b) => b.daysUntil === 0);
+  const weekBirthdays = upcomingBirthdays.filter((b) => b.daysUntil < 7);
+  if (!upcomingBirthdays.length) return h('div', { class: 'muted', style: 'margin-top:6px' }, t('dashboards.noBirthdaysSoon'));
+  const lines = [];
+  if (todayBirthdays.length) lines.push(h('div', { class: 'muted', style: 'margin-top:6px;font-weight:600' }, t('dashboards.birthdaysTodayNames', { names: todayBirthdays.map((b) => b.name).join(', ') })));
+  lines.push(h('div', { class: 'muted', style: 'margin-top:4px' }, t('dashboards.birthdaysWeekCount', { n: weekBirthdays.length })));
+  lines.push(h('div', { class: 'muted', style: 'margin-top:4px' }, t('dashboards.upcomingBirthdaysCount', { n: upcomingBirthdays.length })));
+  return h('div', {}, lines);
 }
