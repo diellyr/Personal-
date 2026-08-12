@@ -59,6 +59,7 @@ export const MODULES = [
 
   { key: 'owner-ai', label: 'AI Settings', group: 'OWNER', icon: '⚙️', permission: 'owner', ownerOnly: true, loader: () => import('../modules/ownerModule.js'), view: 'ai' },
   { key: 'owner-corporate', label: 'Corporate Collector', group: 'OWNER', icon: '🏢', permission: 'owner', ownerOnly: true, loader: () => import('../modules/ownerModule.js'), view: 'corporate' },
+  { key: 'owner-jira', label: 'Jira Import', group: 'OWNER', icon: '🎫', permission: 'owner', ownerOnly: true, loader: () => import('../modules/ownerModule.js'), view: 'jira' },
 ];
 
 export function findModule(key) {

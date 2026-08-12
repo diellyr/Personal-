@@ -3,33 +3,47 @@
 // the flat, comma-separated exports these connectors are meant to consume.
 
 export function parseCSV(text) {
-  const lines = text.replace(/\r\n/g, '\n').split('\n').filter((l) => l.trim().length > 0);
-  if (lines.length === 0) return [];
-  const headers = splitCsvLine(lines[0]);
-  return lines.slice(1).map((line) => {
-    const values = splitCsvLine(line);
+  const rows = parseCsvRows(text.replace(/\r\n/g, '\n').replace(/\r/g, '\n'));
+  const nonEmpty = rows.filter((r) => r.some((v) => v.trim().length > 0));
+  if (nonEmpty.length === 0) return [];
+  const headers = nonEmpty[0].map((h) => h.trim());
+  return nonEmpty.slice(1).map((values) => {
     const row = {};
-    headers.forEach((h, i) => { row[h.trim()] = (values[i] || '').trim(); });
+    headers.forEach((h, i) => { row[h] = (values[i] || '').trim(); });
     return row;
   });
 }
 
-function splitCsvLine(line) {
-  const out = [];
+// Full-text, quote-aware CSV tokenizer — walks the whole string instead of
+// splitting into lines first, so a newline inside a quoted field (e.g. a
+// multi-paragraph Jira "Description" export) is treated as literal field
+// content instead of a row boundary.
+function parseCsvRows(text) {
+  const rows = [];
+  let row = [];
   let cur = '';
   let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const c = line[i];
-    if (c === '"') {
-      if (inQuotes && line[i + 1] === '"') { cur += '"'; i++; } else { inQuotes = !inQuotes; }
-    } else if (c === ',' && !inQuotes) {
-      out.push(cur); cur = '';
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { cur += '"'; i++; } else { inQuotes = false; }
+      } else {
+        cur += c;
+      }
+    } else if (c === '"') {
+      inQuotes = true;
+    } else if (c === ',') {
+      row.push(cur); cur = '';
+    } else if (c === '\n') {
+      row.push(cur); cur = '';
+      rows.push(row); row = [];
     } else {
       cur += c;
     }
   }
-  out.push(cur);
-  return out;
+  if (cur.length > 0 || row.length > 0) { row.push(cur); rows.push(row); }
+  return rows;
 }
 
 // Common wrapper shapes real exports use around the actual list of records.

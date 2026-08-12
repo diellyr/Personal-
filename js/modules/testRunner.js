@@ -12,6 +12,8 @@ import { parseJSON } from '../core/importUtils.js';
 import { extractSchoolBackupRows, schoolBackupConnector } from '../core/connectors/schoolBackupConnector.js';
 import { computeSchoolEvolution } from '../core/schoolIntelligence.js';
 import { extractExpansionYouthRows, expansionYouthConnector } from '../core/connectors/expansionYouthConnector.js';
+import { parseCSV } from '../core/importUtils.js';
+import { jiraConnector } from '../core/connectors/jiraConnector.js';
 
 export async function render(container, ctx) {
   clear(container);
@@ -214,6 +216,26 @@ async function run(host) {
 
     const expanded = expansionYouthConnector.expand([{ data }]);
     if (expanded.length !== 1) throw new Error('expand() did not recognize the wrapped Portal Expansão backup shape');
+  });
+
+  await test('Import: parseCSV keeps a newline inside a quoted field as row data, not a row break', async () => {
+    const csv = 'Summary,Issue key,Description\n"Ticket one","T-1","Line one\nLine two, still same field"\n"Ticket two","T-2","No newline here"\n';
+    const rows = parseCSV(csv);
+    if (rows.length !== 2) throw new Error(`expected 2 rows, got ${rows.length}`);
+    if (!rows[0]['Description'].includes('\n')) throw new Error('embedded newline was lost inside the quoted field');
+    if (rows[1]['Issue key'] !== 'T-2') throw new Error(`row alignment broke after the multi-line field: ${JSON.stringify(rows[1])}`);
+  });
+
+  await test('Jira Connector: maps native CSV export fields and normalizes Jira-style dates/status', async () => {
+    const mapped = jiraConnector.mapRecord({
+      Summary: 'Fix the thing', 'Issue key': 'ABC-42', Status: 'Resolved', Priority: 'High',
+      Assignee: 'Jane Doe', 'Project name': 'Platform', Created: '01. Jan 26 10:00', Updated: '05. Aug 26 19:39', 'Due Date': '10. Aug 26 00:00',
+    });
+    if (mapped.externalId !== 'ABC-42' || mapped.ticketRef !== 'ABC-42') throw new Error(`ticket key not mapped: ${JSON.stringify(mapped)}`);
+    if (mapped.status !== 'DONE') throw new Error(`'Resolved' should map to DONE, got ${mapped.status}`);
+    if (mapped.date !== '2026-08-05') throw new Error(`Jira date not normalized, got ${mapped.date}`);
+    if (mapped.dueDate !== '2026-08-10') throw new Error(`due date not normalized, got ${mapped.dueDate}`);
+    if (mapped.category !== 'Platform') throw new Error(`category should come from Project name, got ${mapped.category}`);
   });
 
   await test('Roles: built-in role cannot be deleted', async () => {

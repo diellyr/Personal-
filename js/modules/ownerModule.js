@@ -5,7 +5,9 @@ import { getAiSettings, saveAiSettings } from '../core/ai/aiProviderFactory.js';
 import { renderForm } from '../ui/components/form.js';
 import { reportSuccess, reportError } from '../core/errorHandler.js';
 import { corporateCollectorConnector } from '../core/connectors/corporateCollectorConnector.js';
+import { jiraConnector } from '../core/connectors/jiraConnector.js';
 import { readFileAsText, detectFormatAndParse } from '../core/importUtils.js';
+import { connectorCard } from './importExportCenter.js';
 
 export async function render(container, ctx) {
   const { subview } = ctx;
@@ -15,8 +17,16 @@ export async function render(container, ctx) {
   const tabs = [
     { key: 'ai', label: 'AI Settings', render: renderAiSettings },
     { key: 'corporate', label: 'Corporate Collector', render: renderCorporateCollector },
+    { key: 'jira', label: 'Jira Import', render: renderJiraImport },
   ];
   container.appendChild(renderTabs(tabs, subview));
+}
+
+async function renderJiraImport(c) {
+  clear(c);
+  c.appendChild(sectionTitle('🎫 Jira Import'));
+  c.appendChild(h('p', {}, 'Importe direto o CSV exportado do seu board Jira ("Export Excel CSV (all fields)") — filtre por pessoas e status na hora de exportar do próprio Jira, e suba o arquivo aqui. Os tickets aparecem em Work Intelligence → Jira Intelligence e no card "Trabalho" do Dashboards. Assim como o Corporate Collector, os registros são sempre PRIVATE por padrão.'));
+  c.appendChild(connectorCard(jiraConnector));
 }
 
 async function renderAiSettings(c) {

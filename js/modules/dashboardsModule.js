@@ -2,7 +2,7 @@ import { h, clear, fmtMoney } from '../ui/dom.js';
 import { sectionTitle, statTile, emptyState, badge } from '../ui/components/misc.js';
 import { barChart, lineChart, radarChart, groupedBarChart } from '../ui/components/chart.js';
 import { computeSpendingIntelligence, computeForecast, computeMonthlyBreakdown } from '../core/financeIntelligence.js';
-import { computeTimesheet } from '../core/workIntelligence.js';
+import { computeTimesheet, computeJiraDashboard } from '../core/workIntelligence.js';
 import { computeCareerEvidenceScores } from '../core/careerIntelligence.js';
 import { computeEnglishDashboard } from '../core/englishIntelligence.js';
 import { computeLifeBalance } from '../core/lifeBalanceIntelligence.js';
@@ -214,11 +214,19 @@ async function acompanhaCard(user) {
 }
 
 async function workCard() {
-  const timesheet = await computeTimesheet('MONTH');
-  const body = timesheet.byCategory.length
+  const [timesheet, jira] = await Promise.all([computeTimesheet('MONTH'), computeJiraDashboard()]);
+  const parts = [];
+  if (jira.total) {
+    parts.push(h('div', { class: 'grid grid-3', style: 'margin-bottom:10px' }, [
+      statTile(t('dashboards.jiraTotal'), jira.total),
+      statTile(t('dashboards.jiraOpen'), jira.open.length),
+      statTile(t('dashboards.jiraOverdue'), jira.overdue.length, null, jira.overdue.length ? 'critical' : 'success'),
+    ]));
+  }
+  parts.push(timesheet.byCategory.length
     ? barChart(timesheet.byCategory, { height: 160, valueFmt: (v) => `${v}h`, color: '#0ea5a5' })
-    : emptyState({ icon: '💼', title: t('dashboards.noWorkActivities') });
-  return cardShell(t('dashboards.workCardTitle'), 'work', body);
+    : emptyState({ icon: '💼', title: t('dashboards.noWorkActivities') }));
+  return cardShell(t('dashboards.workCardTitle'), 'work', h('div', {}, parts));
 }
 
 async function careerCard() {

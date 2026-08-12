@@ -18,13 +18,14 @@ import { expansionConnector } from '../core/connectors/expansionConnector.js';
 import { plumaConnector } from '../core/connectors/plumaConnector.js';
 import { corporateCollectorConnector } from '../core/connectors/corporateCollectorConnector.js';
 import { jobSourceConnector } from '../core/connectors/jobSourceConnector.js';
+import { jiraConnector } from '../core/connectors/jiraConnector.js';
 import { storeNames, SCHEMA_VERSION } from '../core/db.js';
 import { dataProvider } from '../core/indexedDbProvider.js';
 import { estimateStorage } from '../core/db.js';
 import { clearAllModulesData } from '../core/dataManagementService.js';
 import { listRoles, listAssignableRoleNames, createRole, deleteRole, getRolePermissionsMap, setRolePermission, ALL_MODULE_KEYS } from '../core/roleService.js';
 
-const CONNECTORS = [acompanhaPlusConnector, expansionConnector, plumaConnector, corporateCollectorConnector, jobSourceConnector];
+const CONNECTORS = [acompanhaPlusConnector, expansionConnector, plumaConnector, corporateCollectorConnector, jobSourceConnector, jiraConnector];
 
 export async function render(container, ctx) {
   const { user, subview } = ctx;

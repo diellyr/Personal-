@@ -47,13 +47,16 @@ export async function computeWeeklyReview() {
 export async function computeJiraDashboard() {
   const today = todayIso();
   const jira = (await activities()).filter((a) => a.data.kind === 'JIRA');
+  const sorted = [...jira].sort((a, b) => (b.data.date || '').localeCompare(a.data.date || ''));
   return {
     total: jira.length,
+    all: sorted,
     open: jira.filter((a) => a.data.status !== 'DONE'),
     done: jira.filter((a) => a.data.status === 'DONE'),
     overdue: jira.filter((a) => a.data.dueDate && a.data.dueDate < today && a.data.status !== 'DONE'),
     stale: jira.filter((a) => a.data.status !== 'DONE' && daysBetween(a.updated_at.slice(0, 10), today) > 10),
     byCategory: groupSum(jira, 'category'),
+    byAssignee: groupCount(jira, 'assignee'),
   };
 }
 
@@ -71,4 +74,13 @@ function groupSum(items, key) {
     map[k] = (map[k] || 0) + (Number(a.data.durationMinutes) || 0);
   });
   return Object.entries(map).map(([label, minutes]) => ({ label, value: Math.round(minutes / 60 * 10) / 10 }));
+}
+
+function groupCount(items, key) {
+  const map = {};
+  items.forEach((a) => {
+    const k = a.data[key] || 'Sem responsável';
+    map[k] = (map[k] || 0) + 1;
+  });
+  return Object.entries(map).map(([label, value]) => ({ label, value })).sort((a, b) => b.value - a.value);
 }

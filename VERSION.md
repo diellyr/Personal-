@@ -1,6 +1,6 @@
 # Version
 
-**Current version: `1.14.1`** — released 2026-08-12
+**Current version: `1.15.0`** — released 2026-08-12
 
 ## Versioning policy
 
@@ -52,6 +52,7 @@ without the schema version changing, and vice versa. See `docs/DATABASE.md`.
 
 | Version | Date | Highlights |
 |---|---|---|
+| `1.15.0` | 2026-08-12 | New Jira CSV import (Owner → Jira Import): upload a native Jira board export directly, see it in Work Intelligence → Jira Intelligence (full ticket table, by-responsável chart) and on the Dashboards work card. Fixed the shared CSV parser to handle multi-line quoted fields, which Jira's own export uses for Description. See `CHANGELOG.md`. |
 | `1.14.1` | 2026-08-12 | Dashboards' bimestre/semestre comparison bars: swapped order so "Anterior" is on the left and "Atual" on the right. See `CHANGELOG.md`. |
 | `1.14.0` | 2026-08-12 | Dashboards' Acompanha+ School card: choose which student(s) appear (persisted), and grades now show as thin bimester/semester comparison bars instead of text rows. Fixed a bug where "Importar dataset demo" imports weren't tagged for "Excluir dados demo" to find. See `CHANGELOG.md`. |
 | `1.13.1` | 2026-08-12 | Birthday listings (Command Center, Dashboards, Church) now show each person's city, not just their name. See `CHANGELOG.md`. |

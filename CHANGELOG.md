@@ -8,6 +8,37 @@ All notable changes to this project are documented in this file. Format based on
 
 Nothing yet.
 
+## [1.15.0] — 2026-08-12
+
+### Added
+
+- **Jira CSV import** (`js/core/connectors/jiraConnector.js`, new Owner →
+  "Jira Import" tab): reads a native Jira board export ("Export Excel CSV
+  (all fields)") directly — Summary, Issue key, Status, Assignee,
+  Priority, Project name, Created/Updated/Due Date — no pre-formatting
+  needed. Filter by person/status on the Jira side before exporting; the
+  connector imports whatever rows are in the file. Same privacy posture
+  as Corporate Collector: Owner-only, records default to PRIVATE
+  visibility, deduped by Issue key across re-imports.
+- **Jira Intelligence tab** (Work Intelligence) now shows a full sortable
+  ticket table (ticket/title/status/responsável/prioridade/prazo) and a
+  "Por responsável" distribution chart, not just aggregate stat tiles —
+  the stale-ticket and category views from before are unchanged.
+- **Dashboards' "Trabalho" card** gets three Jira stat tiles (total,
+  abertos, atrasados) alongside the existing hours-by-category chart,
+  since Jira tickets normally carry no logged time and would otherwise be
+  invisible there.
+
+### Fixed
+
+- **CSV parser broke on multi-line quoted fields.** `parseCSV()`
+  (`js/core/importUtils.js`) previously split the file into lines before
+  parsing quotes, so a field like Jira's multi-paragraph "Description"
+  column silently fragmented one ticket into several garbage rows. Now
+  parses the whole file as one quote-aware stream — a newline inside a
+  quoted field is data, not a row break. This is shared by every
+  connector, so the fix isn't Jira-specific.
+
 ## [1.14.1] — 2026-08-12
 
 ### Changed

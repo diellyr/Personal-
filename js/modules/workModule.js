@@ -105,13 +105,31 @@ async function createTasksFromActions(meeting) {
 async function renderJiraIntelligence(c) {
   clear(c);
   const j = await computeJiraDashboard();
+  if (!j.total) {
+    c.appendChild(emptyState({ icon: '🎫', title: 'Nenhum ticket do Jira importado ainda', message: 'Importe o CSV do seu board em Owner → Jira Import.' }));
+    return;
+  }
   c.appendChild(h('div', { class: 'grid grid-4' }, [
     statTile('Total', j.total), statTile('Abertos', j.open.length), statTile('Concluídos', j.done.length), statTile('Atrasados', j.overdue.length),
   ]));
   c.appendChild(sectionTitle('⏸️ Sem movimento há mais de 10 dias'));
   c.appendChild(j.stale.length ? h('div', {}, j.stale.map((t) => h('div', { class: 'insight-card WARNING' }, [h('div', { class: 'insight-title' }, t.data.ticketRef || t.data.title), h('div', { class: 'muted' }, t.data.category)]))) : emptyState({ icon: '✅', title: 'Nenhum ticket parado' }));
-  c.appendChild(sectionTitle('📊 Por categoria'));
-  c.appendChild(j.byCategory.length ? h('div', { class: 'card' }, barChart(j.byCategory, { valueFmt: (v) => `${v}h` })) : emptyState({ icon: '📊', title: 'Sem dados de Jira' }));
+  c.appendChild(sectionTitle('👤 Por responsável'));
+  c.appendChild(j.byAssignee.length ? h('div', { class: 'card' }, barChart(j.byAssignee, { height: 150, color: '#7c3aed' })) : emptyState({ icon: '👤', title: 'Sem responsável atribuído' }));
+  c.appendChild(sectionTitle('📊 Horas por categoria'));
+  c.appendChild(j.byCategory.some((cat) => cat.value > 0) ? h('div', { class: 'card' }, barChart(j.byCategory, { valueFmt: (v) => `${v}h` })) : emptyState({ icon: '📊', title: 'Sem horas registradas', message: 'O export do Jira não traz tempo logado — esta chart fica vazia até você lançar horas manualmente em Atividades.' }));
+  c.appendChild(sectionTitle('🎫 Todos os tickets'));
+  c.appendChild(h('div', { class: 'table-wrap' }, h('table', { class: 'data-table' }, [
+    h('thead', {}, h('tr', {}, [h('th', {}, 'Ticket'), h('th', {}, 'Título'), h('th', {}, 'Status'), h('th', {}, 'Responsável'), h('th', {}, 'Prioridade'), h('th', {}, 'Prazo')])),
+    h('tbody', {}, j.all.map((t) => h('tr', {}, [
+      h('td', {}, t.data.ticketRef || '—'),
+      h('td', {}, t.data.title || '—'),
+      h('td', {}, badge(t.data.jiraStatus || t.data.status, t.data.status === 'DONE' ? 'success' : 'neutral')),
+      h('td', {}, t.data.assignee || '—'),
+      h('td', {}, t.data.priority || '—'),
+      h('td', {}, t.data.dueDate ? fmtDate(t.data.dueDate) : '—'),
+    ]))),
+  ])));
 }
 
 async function renderTimesheet(c) {
