@@ -116,7 +116,7 @@ const DICTIONARIES = {
     'cc.trip': 'Viagem — {destination}',
     'cc.aiInsights': '🤖 AI Chief of Staff — principais insights',
     'cc.viewAll': 'Ver todos →',
-    'cc.birthday': '🎂 Aniversário — {name}',
+    'cc.birthday': '🎂 Aniversário — {name} ({city})',
 
     // Finance module
     'finance.title': '💰 Financeiro',
@@ -415,7 +415,8 @@ const DICTIONARIES = {
     'dashboards.upcomingBirthdaysCount': '🎂 {n} aniversariante(s) nos próximos 30 dias.',
     'dashboards.noBirthdaysSoon': 'Nenhum aniversário nos próximos 30 dias.',
     'dashboards.birthdaysTodayNames': '🎉 Hoje: {names}',
-    'dashboards.birthdaysWeekCount': '📅 {n} aniversariante(s) essa semana.',
+    'dashboards.birthdaysWeekNames': '📅 Esta semana: {names}',
+    'dashboards.moreOthers': '+ {n} outro(s)…',
   },
   en: {
     'login.subtitle': 'Personal+ — your personal operating system',
@@ -491,7 +492,7 @@ const DICTIONARIES = {
     'cc.trip': 'Trip — {destination}',
     'cc.aiInsights': '🤖 AI Chief of Staff — top insights',
     'cc.viewAll': 'View all →',
-    'cc.birthday': '🎂 Birthday — {name}',
+    'cc.birthday': '🎂 Birthday — {name} ({city})',
 
     // Finance module
     'finance.title': '💰 Finance',
@@ -790,6 +791,7 @@ const DICTIONARIES = {
     'dashboards.upcomingBirthdaysCount': '🎂 {n} birthday(s) in the next 30 days.',
     'dashboards.noBirthdaysSoon': 'No birthdays in the next 30 days.',
     'dashboards.birthdaysTodayNames': '🎉 Today: {names}',
-    'dashboards.birthdaysWeekCount': '📅 {n} birthday(s) this week.',
+    'dashboards.birthdaysWeekNames': '📅 This week: {names}',
+    'dashboards.moreOthers': '+ {n} more…',
   },
 };

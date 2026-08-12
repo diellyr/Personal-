@@ -53,7 +53,7 @@ export async function computeExpansionIntelligence(user) {
 
   const today = new Date();
   const upcomingBirthdays = withBirthDate
-    .map((r) => ({ name: r.name, birthDate: r.birthDate, daysUntil: daysToNextBirthday(r.birthDate, today), age: ageFromBirthDate(r.birthDate, today) }))
+    .map((r) => ({ name: r.name, city: r.city || null, congregation: r.congregation || null, birthDate: r.birthDate, daysUntil: daysToNextBirthday(r.birthDate, today), age: ageFromBirthDate(r.birthDate, today) }))
     .filter((r) => r.daysUntil <= 30)
     .sort((a, b) => a.daysUntil - b.daysUntil);
 

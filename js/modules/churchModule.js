@@ -111,9 +111,9 @@ async function renderExpansionYouth(container, user) {
       dashHost.appendChild(sectionTitle(t('church.birthdaysTitle')));
       dashHost.appendChild(intel.upcomingBirthdays.length
         ? h('div', { class: 'table-wrap' }, h('table', { class: 'data-table' }, [
-          h('thead', {}, h('tr', {}, [h('th', {}, t('church.fieldName')), h('th', {}, t('church.fieldDate')), h('th', {}, t('church.colBirthdayIn')), h('th', {}, t('church.colAge'))])),
+          h('thead', {}, h('tr', {}, [h('th', {}, t('church.fieldName')), h('th', {}, t('church.colCity')), h('th', {}, t('church.fieldDate')), h('th', {}, t('church.colBirthdayIn')), h('th', {}, t('church.colAge'))])),
           h('tbody', {}, intel.upcomingBirthdays.slice(0, 20).map((b) => h('tr', {}, [
-            h('td', {}, b.name), h('td', {}, fmtDate(b.birthDate)),
+            h('td', {}, b.name), h('td', {}, b.city || '—'), h('td', {}, fmtDate(b.birthDate)),
             h('td', {}, b.daysUntil === 0 ? badge(t('church.today'), 'warning') : t('church.daysCount', { n: b.daysUntil })),
             h('td', {}, t('church.ageYears', { n: b.age + (b.daysUntil === 0 ? 0 : 1) })),
           ]))),

@@ -8,6 +8,20 @@ All notable changes to this project are documented in this file. Format based on
 
 Nothing yet.
 
+## [1.13.1] — 2026-08-12
+
+### Added
+
+- **Birthday listings now show city.** `computeExpansionIntelligence()`'s
+  `upcomingBirthdays` entries carry `city` (and `congregation`) alongside
+  name/date. Command Center's agenda birthday rows now read "Name
+  (City)"; the Dashboards "Portal Expansão — Jovens" card's today/this-week
+  lines show "Name (City)" for each person (capped at 8 for the week list,
+  with a "+N more" tail); the Church module's own "Aniversariantes" table
+  gets a dedicated "Cidade" column. Lets a youth leader see at a glance
+  which congregation/city to plan a visit or call around, not just who to
+  greet.
+
 ## [1.13.0] — 2026-08-12
 
 ### Added

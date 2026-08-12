@@ -100,7 +100,7 @@ export async function render(container, ctx) {
       ...churchAgenda.filter((a) => inRange(a.data.date)).map((a) => ({ date: a.data.date, title: a.data.title, source: 'Church', module: 'church' })),
       ...jobInterviews.filter((i) => inRange(i.data.date)).map((i) => ({ date: i.data.date, title: t('cc.interview', { company: i.data.company || '' }), source: 'Job Hunter', module: 'jobs' })),
       ...trips.filter((tr) => inRange(tr.data.startDate)).map((tr) => ({ date: tr.data.startDate, title: t('cc.trip', { destination: tr.data.destination }), source: 'Travel', module: 'hobbies-travel' })),
-      ...expansionBirthdays.filter((b) => b.daysUntil < rangeDays).map((b) => ({ date: addDays(today, b.daysUntil), title: t('cc.birthday', { name: b.name }), source: 'Youth', module: 'church/expansion-youth' })),
+      ...expansionBirthdays.filter((b) => b.daysUntil < rangeDays).map((b) => ({ date: addDays(today, b.daysUntil), title: t('cc.birthday', { name: b.name, city: b.city || '—' }), source: 'Youth', module: 'church/expansion-youth' })),
     ].sort((a, b) => (a.date < b.date ? -1 : 1));
     root.appendChild(agendaItems.length
       ? h('div', { class: 'table-wrap' }, h('table', { class: 'data-table' }, [
