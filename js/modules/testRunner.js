@@ -14,6 +14,8 @@ import { computeSchoolEvolution } from '../core/schoolIntelligence.js';
 import { extractExpansionYouthRows, expansionYouthConnector } from '../core/connectors/expansionYouthConnector.js';
 import { parseCSV } from '../core/importUtils.js';
 import { jiraConnector } from '../core/connectors/jiraConnector.js';
+import { parseIcs } from '../core/icsParser.js';
+import { icsCalendarConnector } from '../core/connectors/icsCalendarConnector.js';
 
 export async function render(container, ctx) {
   clear(container);
@@ -236,6 +238,53 @@ async function run(host) {
     if (mapped.date !== '2026-08-05') throw new Error(`Jira date not normalized, got ${mapped.date}`);
     if (mapped.dueDate !== '2026-08-10') throw new Error(`due date not normalized, got ${mapped.dueDate}`);
     if (mapped.category !== 'Platform') throw new Error(`category should come from Project name, got ${mapped.category}`);
+  });
+
+  await test('Import: parseIcs unfolds wrapped lines, skips cancelled events, marks all-day', async () => {
+    const ics = [
+      'BEGIN:VCALENDAR',
+      'BEGIN:VEVENT',
+      'UID:evt-1@google.com',
+      'SUMMARY:Reunião de plan',
+      ' ejamento longa que quebra linha',
+      'DTSTART:20260815T140000Z',
+      'DTEND:20260815T150000Z',
+      'LOCATION:Sala 2',
+      'END:VEVENT',
+      'BEGIN:VEVENT',
+      'UID:evt-2@google.com',
+      'SUMMARY:Feriado',
+      'DTSTART;VALUE=DATE:20260901',
+      'END:VEVENT',
+      'BEGIN:VEVENT',
+      'UID:evt-3@google.com',
+      'SUMMARY:Cancelado',
+      'DTSTART:20260820T100000Z',
+      'STATUS:CANCELLED',
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ].join('\r\n');
+    const events = parseIcs(ics);
+    if (events.length !== 2) throw new Error(`expected 2 events (cancelled one skipped), got ${events.length}: ${JSON.stringify(events)}`);
+    const first = events.find((e) => e.uid === 'evt-1@google.com');
+    if (!first || first.title !== 'Reunião de planejamento longa que quebra linha') throw new Error(`folded SUMMARY line not unwrapped correctly: ${JSON.stringify(first)}`);
+    if (first.date !== '2026-08-15') throw new Error(`bad date parse: ${first?.date}`);
+    const allDay = events.find((e) => e.uid === 'evt-2@google.com');
+    if (!allDay || !allDay.allDay || allDay.date !== '2026-09-01') throw new Error(`all-day event not flagged correctly: ${JSON.stringify(allDay)}`);
+  });
+
+  await test('ICS Connector: maps parsed events and dedupes by UID on a 2nd import', async () => {
+    const events = [{ uid: 'ics-test-1', title: 'Evento de teste (TEST)', date: '2026-08-20', allDay: false }];
+    const mapped = icsCalendarConnector.mapRecord(events[0]);
+    if (mapped.externalId !== 'ics-test-1' || mapped.title !== 'Evento de teste (TEST)') throw new Error(`bad mapping: ${JSON.stringify(mapped)}`);
+    const r1 = await icsCalendarConnector.import(events);
+    const r2 = await icsCalendarConnector.import(events);
+    if (r1.imported !== 1) throw new Error(`expected 1st import to add 1 record, got ${r1.imported}`);
+    if (r2.imported !== 0 || r2.skipped !== 1) throw new Error(`expected 2nd import to dedupe by UID, got imported=${r2.imported} skipped=${r2.skipped}`);
+    const repo = new EntityRepository('calendar.externalEvent');
+    const all = await repo.findAll();
+    const created = all.find((r) => r.external_id === 'ics-test-1');
+    if (created) await repo.hardDelete(created.id);
   });
 
   await test('Roles: built-in role cannot be deleted', async () => {

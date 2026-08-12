@@ -8,6 +8,30 @@ All notable changes to this project are documented in this file. Format based on
 
 Nothing yet.
 
+## [1.17.0] — 2026-08-12
+
+### Added
+
+- **Global Calendar can connect to Google Calendar via iCal/ICS.** New
+  "🔗 Conectar agenda" panel: paste the calendar's "secret address in
+  iCal format" (Google Calendar → Settings → your calendar → Integrate
+  calendar) for live sync straight from the browser — nothing passes
+  through any server this app runs. A "Google" category joins the
+  existing Family/Church/Travel/Career/Interview/Health/Studies/Task set,
+  with its own color and legend toggle.
+- Because Google's ICS endpoint doesn't reliably send CORS headers for
+  arbitrary browser origins, the live fetch can fail even with a correct
+  URL — this is flagged upfront, and the sync failure path shows a clear
+  explanation plus a same-panel fallback: export the calendar as a .ics
+  file and upload it instead. Both paths run through the same connector
+  (`js/core/connectors/icsCalendarConnector.js`, entity type
+  `calendar.externalEvent`), deduped by each event's UID.
+- New `js/core/icsParser.js`: a minimal RFC 5545 reader — unfolds wrapped
+  lines, unescapes text fields, reads DTSTART/DTEND (including all-day
+  `VALUE=DATE` events), skips `STATUS:CANCELLED` events. Recurring events
+  (RRULE present) are recorded on their first occurrence only, not
+  expanded into every future date.
+
 ## [1.16.0] — 2026-08-12
 
 ### Added

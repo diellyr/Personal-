@@ -24,6 +24,7 @@ export const KNOWN_ENTITY_TYPES = [
   'memory.item',
   'projects.project',
   'goals.goal',
+  'calendar.externalEvent',
 ];
 
 function toCsv(rows) {

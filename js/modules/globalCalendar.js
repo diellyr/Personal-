@@ -1,9 +1,14 @@
-import { h, clear, fmtDate } from '../ui/dom.js';
+import { h, clear, fmtDate, fmtDateTime } from '../ui/dom.js';
 import { EntityRepository } from '../core/entityRepository.js';
 import { canViewResource } from '../core/permissions.js';
 import { listAllTasks } from '../core/tasks.js';
-import { emptyState, sectionTitle } from '../ui/components/misc.js';
+import { emptyState, sectionTitle, badge } from '../ui/components/misc.js';
 import { todayIso } from '../core/dateUtils.js';
+import { getIcsSyncConfig, setIcsSyncUrl, syncIcsNow } from '../core/calendarSync.js';
+import { icsCalendarConnector } from '../core/connectors/icsCalendarConnector.js';
+import { parseIcs } from '../core/icsParser.js';
+import { readFileAsText } from '../core/importUtils.js';
+import { reportSuccess, reportError } from '../core/errorHandler.js';
 
 const SOURCES = [
   { entityType: 'family.childEvent', dateField: 'date', label: 'Family', titleFn: (d) => `${d.childName}: ${d.title}` },
@@ -29,6 +34,7 @@ const CATEGORY_COLORS = {
   Health: '#be185d',
   Studies: '#16a34a',
   Task: '#475569',
+  Google: '#f9ab00',
 };
 const ALL_CATEGORIES = Object.keys(CATEGORY_COLORS);
 
@@ -59,6 +65,82 @@ function buildMonthGrid(viewDate) {
 
 const DOW_LABELS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
+function icsSyncPanel(onSynced) {
+  const wrap = h('div', { class: 'card', style: 'margin-bottom:14px' });
+
+  async function paint() {
+    clear(wrap);
+    const cfg = await getIcsSyncConfig();
+    const urlInput = h('input', { type: 'text', placeholder: 'Cole aqui o link secreto em formato iCal', value: cfg.url, style: 'width:100%' });
+    const fileInput = h('input', { type: 'file', accept: '.ics' });
+
+    const statusLine = cfg.lastSyncAt
+      ? (cfg.lastStatus === 'success'
+        ? h('p', { class: 'muted', style: 'font-size:12.5px' }, `✅ Última sincronização: ${fmtDateTime(cfg.lastSyncAt)} · ${cfg.lastCount} novo(s) evento(s).`)
+        : h('p', { class: 'muted', style: 'font-size:12.5px;color:var(--critical)' }, `⚠️ Falha na última sincronização (${fmtDateTime(cfg.lastSyncAt)}): ${cfg.lastError}`))
+      : h('p', { class: 'muted', style: 'font-size:12.5px' }, 'Ainda não sincronizado.');
+
+    const syncBtn = h('button', {
+      class: 'btn btn-primary btn-sm',
+      onClick: async (e) => {
+        // Capture the target synchronously — e.currentTarget goes null once
+        // this handler yields at the first await, before the DOM element
+        // itself is gone (paint() hasn't rebuilt yet at this point).
+        const btn = e.currentTarget;
+        const url = urlInput.value.trim();
+        if (!url) return reportError(new Error('Cole o link ICS antes de sincronizar.'));
+        await setIcsSyncUrl(url);
+        btn.disabled = true;
+        btn.textContent = 'Sincronizando…';
+        try {
+          const result = await syncIcsNow();
+          reportSuccess(`Agenda sincronizada: ${result.imported} novo(s), ${result.skipped} já existente(s).`);
+          if (onSynced) await onSynced();
+        } catch (err) {
+          reportError(new Error(`Falha ao buscar a agenda (${err.message}). Isso costuma acontecer porque o Google não libera esse link pro navegador acessar diretamente (CORS) — use "Importar arquivo .ics" abaixo como alternativa.`), 'ics-sync');
+        }
+        await paint();
+      },
+    }, 'Sincronizar agora');
+
+    const fileBtn = h('button', {
+      class: 'btn btn-sm',
+      onClick: async () => {
+        const file = fileInput.files[0];
+        if (!file) return reportError(new Error('Escolha um arquivo .ics.'));
+        try {
+          const text = await readFileAsText(file);
+          const rawEvents = parseIcs(text);
+          const result = await icsCalendarConnector.import(rawEvents);
+          reportSuccess(`Arquivo importado: ${result.imported} novo(s), ${result.skipped} já existente(s).`);
+          fileInput.value = '';
+          if (onSynced) await onSynced();
+        } catch (err) {
+          reportError(err, 'ics-file-import');
+        }
+      },
+    }, 'Importar arquivo .ics');
+
+    wrap.appendChild(h('div', {}, [
+      h('div', { class: 'flex-between' }, [
+        h('strong', {}, '🔗 Conectar agenda (Google Calendar via ICS)'),
+        badge(cfg.url ? 'Configurado' : 'Não configurado', cfg.url ? 'success' : 'neutral'),
+      ]),
+      h('p', { class: 'muted', style: 'font-size:12.5px;margin:6px 0' }, 'No Google Calendar: Configurações → sua agenda → "Integrar agenda" → copie o "Endereço secreto em formato iCal". Cole abaixo — a busca acontece direto do seu navegador, sem passar por nenhum servidor deste app.'),
+      h('div', { class: 'form-field' }, [h('label', {}, 'Link secreto (.ics)'), urlInput]),
+      h('div', { class: 'flex gap-8', style: 'margin-top:8px' }, [syncBtn]),
+      statusLine,
+      h('hr', { class: 'sep' }),
+      h('p', { class: 'muted', style: 'font-size:12px' }, 'Se a sincronização direta falhar (comum — o Google nem sempre libera esse acesso pro navegador), exporte a agenda como arquivo .ics e importe aqui:'),
+      h('div', { class: 'form-field' }, [h('label', {}, 'Arquivo .ics'), fileInput]),
+      fileBtn,
+    ]));
+  }
+
+  paint();
+  return wrap;
+}
+
 export async function render(container, ctx) {
   const { user } = ctx;
   clear(container);
@@ -80,6 +162,7 @@ export async function render(container, ctx) {
   }));
   container.appendChild(h('p', { class: 'field-hint', style: 'margin:-4px 0 8px' }, 'Clique em uma categoria para mostrar/ocultar.'));
   container.appendChild(legend);
+  container.appendChild(icsSyncPanel(() => paint()));
 
   const calendarHost = h('div', {});
   const selectedDayHost = h('div', { style: 'margin-top:18px' });
@@ -104,6 +187,10 @@ export async function render(container, ctx) {
     if (state.categories.has('Task')) {
       const tasks = await listAllTasks();
       tasks.filter((t) => t.dueDate).forEach((t) => items.push({ date: t.dueDate, title: t.title, category: 'Task' }));
+    }
+    if (state.categories.has('Google')) {
+      const events = (await new EntityRepository('calendar.externalEvent').findAll()).filter((r) => canViewResource(user, r));
+      events.forEach((r) => { if (r.data.date) items.push({ date: r.data.date, title: r.data.title, category: 'Google' }); });
     }
     return items.sort((a, b) => (a.date < b.date ? -1 : 1));
   }

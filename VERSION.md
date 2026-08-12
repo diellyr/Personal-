@@ -1,6 +1,6 @@
 # Version
 
-**Current version: `1.16.0`** — released 2026-08-12
+**Current version: `1.17.0`** — released 2026-08-12
 
 ## Versioning policy
 
@@ -52,6 +52,7 @@ without the schema version changing, and vice versa. See `docs/DATABASE.md`.
 
 | Version | Date | Highlights |
 |---|---|---|
+| `1.17.0` | 2026-08-12 | Global Calendar can now pull in Google Calendar events via iCal/ICS — paste the calendar's secret iCal link for live sync, or upload an exported .ics file as a fallback. New "Google" category alongside Family/Church/Travel/etc. See `CHANGELOG.md`. |
 | `1.16.0` | 2026-08-12 | Dashboards' Trabalho card: filter Jira open/overdue by responsável, with a per-person breakdown chart. Weekly Work Review shows Jira tickets touched this week. Jira Import added to the general Import Center. Removed the unused "Portal Expansão" (flat events) connector — it had no visualization anywhere; only "Portal Expansão - Jovens" does. See `CHANGELOG.md`. |
 | `1.15.0` | 2026-08-12 | New Jira CSV import (Owner → Jira Import): upload a native Jira board export directly, see it in Work Intelligence → Jira Intelligence (full ticket table, by-responsável chart) and on the Dashboards work card. Fixed the shared CSV parser to handle multi-line quoted fields, which Jira's own export uses for Description. See `CHANGELOG.md`. |
 | `1.14.1` | 2026-08-12 | Dashboards' bimestre/semestre comparison bars: swapped order so "Anterior" is on the left and "Atual" on the right. See `CHANGELOG.md`. |
