@@ -8,6 +8,42 @@ All notable changes to this project are documented in this file. Format based on
 
 Nothing yet.
 
+## [1.14.0] — 2026-08-12
+
+### Added
+
+- **Dashboards' "Acompanha+ School" card is now user-configurable.** A new
+  "⚙️ Alunos" toggle opens a checklist of every child with either event-log
+  or grade data (the union of both, since a child can have only one) —
+  selection persists in `localStorage`
+  (`dielly_os_dashboard_school_children`) and defaults to showing
+  everyone. Solves stale/demo children crowding out real ones without
+  having to touch the underlying data.
+- **Grades comparison redesigned as thin bars.** Each selected child now
+  gets a compact grouped-bar chart (`groupedBarChart`) with two groups —
+  Bimestre and Semestre — each showing current vs. previous as two thin
+  bars, replacing the old current/previous text row. `schoolIntelligence.js`
+  already computed `semesterComparison`; the Dashboards card just wasn't
+  using it before.
+
+### Fixed
+
+- **"Excluir dados demo" didn't remove data imported via a connector's
+  "Importar dataset demo" button** (root cause of Sofia/Theo persisting on
+  the Acompanha+ School dashboard after a demo-data cleanup). That cleanup
+  matches strictly on `record.source === 'DEMO_SEED'`, but
+  `BaseConnector.importDemoDataset()` reused the same code path as a real
+  file import, tagging records with the connector's own id (e.g.
+  `'ACOMPANHA-PLUS'`) instead. Fixed by having `importDemoDataset()` pass
+  `sourceOverride: 'DEMO_SEED'` through `import()`, so it's now
+  indistinguishable from seed-pass demo data for cleanup purposes, across
+  every connector (Acompanha+, School Backup, Portal Expansão, Pluma,
+  Corporate Collector, Job Sources). Only affects demo-dataset imports
+  going forward — records already imported before this fix keep their old
+  tag and won't be swept up retroactively; use the new student selector
+  (or delete the stray record directly from the module's table) to hide
+  ones already imported.
+
 ## [1.13.1] — 2026-08-12
 
 ### Added

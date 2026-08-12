@@ -1,6 +1,6 @@
 import { h, clear, fmtMoney } from '../ui/dom.js';
 import { sectionTitle, statTile, emptyState, badge } from '../ui/components/misc.js';
-import { barChart, lineChart, radarChart } from '../ui/components/chart.js';
+import { barChart, lineChart, radarChart, groupedBarChart } from '../ui/components/chart.js';
 import { computeSpendingIntelligence, computeForecast, computeMonthlyBreakdown } from '../core/financeIntelligence.js';
 import { computeTimesheet } from '../core/workIntelligence.js';
 import { computeCareerEvidenceScores } from '../core/careerIntelligence.js';
@@ -101,38 +101,116 @@ function deltaBadge(current, previous) {
   return badge(`${diff >= 0 ? '▲' : '▼'} ${Math.abs(diff).toFixed(1)}`, diff >= 0 ? 'success' : 'critical');
 }
 
+const SCHOOL_DASH_CHILDREN_KEY = 'dielly_os_dashboard_school_children';
+
+// null means "show everyone" — an explicit array is a deliberate subset.
+function getSelectedSchoolChildren() {
+  try {
+    const raw = localStorage.getItem(SCHOOL_DASH_CHILDREN_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+function setSelectedSchoolChildren(arr) {
+  if (arr === null) localStorage.removeItem(SCHOOL_DASH_CHILDREN_KEY);
+  else localStorage.setItem(SCHOOL_DASH_CHILDREN_KEY, JSON.stringify(arr));
+}
+
+function legendDot(color, label) {
+  return h('span', { style: 'display:inline-flex;align-items:center;gap:4px' }, [
+    h('span', { style: `width:8px;height:8px;border-radius:50%;background:${color};display:inline-block` }),
+    label,
+  ]);
+}
+
+function childSettingsPanel(allChildren, selected, onChange) {
+  const activeSet = new Set(selected || allChildren);
+  return h('div', { class: 'card', style: 'margin:6px 0 12px;padding:10px' }, [
+    h('div', { class: 'flex-between', style: 'margin-bottom:6px' }, [
+      h('strong', { style: 'font-size:12px' }, t('dashboards.chooseChildren')),
+      h('button', { class: 'link-btn', style: 'font-size:12px', onClick: () => onChange(null) }, t('dashboards.selectAll')),
+    ]),
+    h('div', { style: 'display:flex;flex-wrap:wrap;gap:10px' }, allChildren.map((name) => h('label', { style: 'display:flex;align-items:center;gap:4px;font-size:12.5px;cursor:pointer' }, [
+      h('input', {
+        type: 'checkbox', checked: activeSet.has(name) || undefined,
+        onChange: (e) => {
+          const current = selected ? [...selected] : [...allChildren];
+          if (e.target.checked) { if (!current.includes(name)) current.push(name); }
+          else { const idx = current.indexOf(name); if (idx >= 0) current.splice(idx, 1); }
+          onChange(current);
+        },
+      }),
+      name,
+    ]))),
+  ]);
+}
+
 // One card for all Acompanha+ School data — event log (acompanhaEvent) and
 // grades (schoolGrade) are separate entity types with separate children
 // sets (e.g. a child with only imported grades and no logged events), so a
 // child could be entirely invisible if these were two separate cards.
+// Which children show is user-configurable (persisted in localStorage)
+// since demo/stale children can otherwise crowd out real ones.
 async function acompanhaCard(user) {
-  const events = (await new EntityRepository('family.acompanhaEvent').findAll()).filter((r) => canViewResource(user, r) && r.data.childName);
-  const byChild = {};
-  events.forEach((r) => { const c = r.data.childName; byChild[c] = (byChild[c] || 0) + 1; });
-  const eventData = Object.entries(byChild).map(([label, value]) => ({ label, value }));
-  const alerts = events.filter((r) => r.data.alert).length;
+  const wrap = h('div', {});
+  const state = { showSettings: false };
 
-  const gradeChildren = await listSchoolChildren(user);
-  const gradeRows = await Promise.all(gradeChildren.map(async (child) => {
-    const ev = await computeSchoolEvolution(user, child);
-    return { child, bimester: summarizeComparison(ev.bimesterComparison) };
-  }));
+  async function paint() {
+    clear(wrap);
+    const events = (await new EntityRepository('family.acompanhaEvent').findAll()).filter((r) => canViewResource(user, r) && r.data.childName);
+    const eventChildren = [...new Set(events.map((r) => r.data.childName))];
+    const gradeChildren = await listSchoolChildren(user);
+    const allChildren = [...new Set([...eventChildren, ...gradeChildren])].sort();
 
-  const parts = [];
-  if (eventData.length) {
-    parts.push(barChart(eventData, { height: 120, color: '#f59e0b' }));
-    parts.push(h('div', { class: 'muted', style: 'margin:6px 0 12px' }, alerts ? t('dashboards.activeAlerts', { n: alerts }) : t('dashboards.noActiveAlerts')));
+    const selected = getSelectedSchoolChildren();
+    const activeChildren = selected ? allChildren.filter((c) => selected.includes(c)) : allChildren;
+    const activeSet = new Set(activeChildren);
+
+    wrap.appendChild(h('div', { class: 'flex-between', style: 'margin-bottom:6px' }, [
+      h('span', { class: 'muted', style: 'font-size:12px' }, t('dashboards.schoolChildrenShown', { n: activeChildren.length, total: allChildren.length })),
+      h('button', { class: 'btn btn-sm', onClick: () => { state.showSettings = !state.showSettings; paint(); } }, t('dashboards.chooseChildrenBtn')),
+    ]));
+    if (state.showSettings) wrap.appendChild(childSettingsPanel(allChildren, selected, (next) => { setSelectedSchoolChildren(next); paint(); }));
+
+    const filteredEvents = events.filter((r) => activeSet.has(r.data.childName));
+    const byChild = {};
+    filteredEvents.forEach((r) => { const c = r.data.childName; byChild[c] = (byChild[c] || 0) + 1; });
+    const eventData = Object.entries(byChild).map(([label, value]) => ({ label, value }));
+    const alerts = filteredEvents.filter((r) => r.data.alert).length;
+
+    const gradeRows = await Promise.all(gradeChildren.filter((c) => activeSet.has(c)).map(async (child) => {
+      const ev = await computeSchoolEvolution(user, child);
+      return { child, bimester: summarizeComparison(ev.bimesterComparison), semester: summarizeComparison(ev.semesterComparison) };
+    }));
+
+    const parts = [];
+    if (eventData.length) {
+      parts.push(barChart(eventData, { height: 120, color: '#f59e0b' }));
+      parts.push(h('div', { class: 'muted', style: 'margin:6px 0 12px' }, alerts ? t('dashboards.activeAlerts', { n: alerts }) : t('dashboards.noActiveAlerts')));
+    }
+    if (gradeRows.length) {
+      parts.push(h('div', { class: 'muted', style: 'font-size:12px;margin-bottom:4px' }, t('dashboards.gradesCurrentVsPrevious')));
+      parts.push(h('div', { class: 'flex gap-8', style: 'font-size:11px;margin-bottom:6px' }, [legendDot('#2952e3', t('dashboards.current')), legendDot('#94a3b8', t('dashboards.previous'))]));
+      gradeRows.forEach((r) => {
+        const groups = [
+          { label: t('dashboards.bimester'), values: [r.bimester.currentAvg, r.bimester.previousAvg] },
+          { label: t('dashboards.semester'), values: [r.semester.currentAvg, r.semester.previousAvg] },
+        ];
+        parts.push(h('div', { style: 'margin-bottom:10px' }, [
+          h('div', { class: 'flex-between', style: 'font-size:12.5px' }, [h('strong', {}, r.child), deltaBadge(r.bimester.currentAvg, r.bimester.previousAvg)]),
+          groupedBarChart(groups, ['current', 'previous'], { height: 90, colors: ['#2952e3', '#94a3b8'], valueFmt: (v) => (v === null || v === undefined ? '' : v.toFixed(1)) }),
+        ]));
+      });
+    }
+    if (allChildren.length && !activeChildren.length) parts.push(emptyState({ icon: '🎓', title: t('dashboards.noChildrenSelected') }));
+    else if (!parts.length) parts.push(emptyState({ icon: '🎓', title: t('dashboards.noAcompanhaData') }));
+
+    wrap.appendChild(h('div', {}, parts));
   }
-  if (gradeRows.length) {
-    parts.push(h('div', { class: 'muted', style: 'font-size:12px;margin-bottom:4px' }, t('dashboards.gradesCurrentVsPrevious')));
-    parts.push(h('div', {}, gradeRows.map((r) => h('div', { class: 'flex-between', style: 'padding:6px 0;border-bottom:1px solid var(--border);font-size:12.5px' }, [
-      h('span', {}, `${r.child}: ${r.bimester.currentAvg != null ? r.bimester.currentAvg.toFixed(1) : '—'}${r.bimester.previousAvg != null ? ` · ${t('dashboards.previousAvg', { value: r.bimester.previousAvg.toFixed(1) })}` : ''}`),
-      deltaBadge(r.bimester.currentAvg, r.bimester.previousAvg),
-    ]))));
-  }
-  if (!parts.length) parts.push(emptyState({ icon: '🎓', title: t('dashboards.noAcompanhaData') }));
 
-  return cardShell(t('dashboards.acompanhaCardTitle'), 'acompanha-plus', h('div', {}, parts), { clickable: true });
+  await paint();
+  return cardShell(t('dashboards.acompanhaCardTitle'), 'acompanha-plus', wrap, { clickable: false });
 }
 
 async function workCard() {

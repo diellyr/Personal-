@@ -54,7 +54,7 @@ export class BaseConnector extends Connector {
     });
   }
 
-  async import(rawRecords, { onProgress } = {}) {
+  async import(rawRecords, { onProgress, sourceOverride } = {}) {
     const previewed = await this.preview(rawRecords);
     let imported = 0;
     const errors = [];
@@ -67,7 +67,7 @@ export class BaseConnector extends Connector {
       }
       try {
         const { externalId, ...data } = item.mapped;
-        await this.repo.create(data, { source: this.id.toUpperCase(), external_id: String(item.externalId), sync_status: 'SYNCED' });
+        await this.repo.create(data, { source: sourceOverride || this.id.toUpperCase(), external_id: String(item.externalId), sync_status: 'SYNCED' });
         imported++;
       } catch (err) {
         errors.push(err.message);
@@ -79,8 +79,13 @@ export class BaseConnector extends Connector {
     return { imported, skipped: previewed.length - imported, errors };
   }
 
+  // Tagged distinctly from a real file import (source: 'DEMO_SEED' instead
+  // of this.id.toUpperCase()) so "Excluir dados demo" in Backup & Restore
+  // — which matches strictly on that tag — can find and remove it. Before
+  // this, demo-dataset imports were indistinguishable from a real import
+  // through the same connector and survived the demo-data cleanup.
   async importDemoDataset() {
-    return this.import(this.demoDataset());
+    return this.import(this.demoDataset(), { sourceOverride: 'DEMO_SEED' });
   }
 
   async sync() {

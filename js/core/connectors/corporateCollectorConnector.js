@@ -20,8 +20,8 @@ export class CorporateCollectorConnector extends BaseConnector {
     return { externalId: raw.id || raw.ticketRef, ...sanitizeCorporateWorkItem(raw) };
   }
 
-  async import(rawRecords) {
-    const result = await super.import(rawRecords);
+  async import(rawRecords, opts) {
+    const result = await super.import(rawRecords, opts);
     // Force PRIVATE visibility for every corporate-sourced record regardless
     // of default entity visibility (rule 102).
     return result;
